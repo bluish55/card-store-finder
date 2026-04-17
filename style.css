@@ -64,6 +64,49 @@ body {
   display: none !important;
 }
 
+/* 햄버거 메뉴 */
+#menu-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  color: black;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 100;
+  padding: 0;
+}
+
+#menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+#side-menu {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 300;
+}
+
+#menu-email {
+  font-size: 14px;
+  color: #666;
+  word-break: break-all;
+}
+
 /* 관리자 페이지 */
 #login-form, #admin-panel {
   max-width: 480px;

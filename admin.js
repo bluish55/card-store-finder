@@ -4,6 +4,16 @@ window.addEventListener('load', () => {
   db = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
 });
 
+function openMenu() {
+  document.getElementById('side-menu').classList.remove('hidden');
+  document.getElementById('menu-overlay').classList.remove('hidden');
+}
+
+function closeMenu() {
+  document.getElementById('side-menu').classList.add('hidden');
+  document.getElementById('menu-overlay').classList.add('hidden');
+}
+
 async function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
@@ -11,6 +21,8 @@ async function login() {
   if (error) return alert('로그인 실패: ' + error.message);
   document.getElementById('login-form').classList.add('hidden');
   document.getElementById('admin-panel').classList.remove('hidden');
+  document.getElementById('menu-btn').classList.remove('hidden');
+  document.getElementById('menu-email').textContent = email;
   loadStoreList();
 }
 

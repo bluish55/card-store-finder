@@ -14,9 +14,16 @@
     <button onclick="login()">로그인</button>
   </div>
 
+  <button id="menu-btn" class="hidden" onclick="openMenu()">&#9776;</button>
+
+  <div id="menu-overlay" class="hidden" onclick="closeMenu()"></div>
+  <div id="side-menu" class="hidden">
+    <p id="menu-email"></p>
+    <button onclick="logout()">로그아웃</button>
+  </div>
+
   <div id="admin-panel" class="hidden">
     <h2>판매점 관리</h2>
-    <button onclick="logout()">로그아웃</button>
 
     <h3>판매점 추가</h3>
     <input type="text" id="name" placeholder="상호명">
