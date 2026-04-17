@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 페이지</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="login-form">
+    <h2>관리자 로그인</h2>
+    <input type="email" id="email" placeholder="이메일">
+    <input type="password" id="password" placeholder="비밀번호">
+    <button onclick="login()">로그인</button>
+  </div>
+
+  <div id="admin-panel" class="hidden">
+    <h2>판매점 관리</h2>
+    <button onclick="logout()">로그아웃</button>
+
+    <h3>판매점 추가</h3>
+    <input type="text" id="name" placeholder="상호명">
+    <input type="text" id="address" placeholder="주소">
+    <input type="text" id="phone" placeholder="전화번호">
+    <input type="text" id="items" placeholder="취급품목">
+    <select id="type">
+      <option value="자판기">자판기</option>
+      <option value="편의점">편의점</option>
+      <option value="문방구">문방구</option>
+    </select>
+    <button onclick="addStore()">추가</button>
+
+    <h3>CSV 일괄 업로드</h3>
+    <p style="font-size:13px;color:#666;">CSV 형식: name, address, phone, items, type (첫 줄은 헤더)</p>
+    <input type="file" id="csv-file" accept=".csv">
+    <button onclick="uploadCSV()">업로드</button>
+    <div id="upload-status"></div>
+
+    <h3>판매점 목록</h3>
+    <div id="store-list"></div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

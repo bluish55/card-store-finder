@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포켓몬카드 판매점 지도</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="filter-bar">
+    <button class="filter-btn active" data-type="all">전체</button>
+    <button class="filter-btn" data-type="자판기">자판기</button>
+    <button class="filter-btn" data-type="편의점">편의점</button>
+    <button class="filter-btn" data-type="문방구">문방구</button>
+  </div>
+
+  <div id="store-panel" class="hidden">
+    <div id="panel-handle"></div>
+    <h2 id="store-name"></h2>
+    <p id="store-type"></p>
+    <p id="store-address"></p>
+    <p id="store-phone"></p>
+    <p id="store-items"></p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=cf6b8c5a31ab27835ad75b58e202f3ea&libraries=services"></script>
+  <script src="map.js"></script>
+</body>
+</html>
