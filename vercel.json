@@ -1,4 +1,4 @@
 {
-  "buildCommand": "bash build.sh",
+  "buildCommand": "npm run build",
   "outputDirectory": "."
 }
