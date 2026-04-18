@@ -13,7 +13,7 @@ const typeColors = {
 async function initMap() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      (pos) => createMap(pos.coords.latitude, pos.coords.longitude),
+      (pos) => { alert(pos.coords.latitude + ', ' + pos.coords.longitude); createMap(pos.coords.latitude, pos.coords.longitude); },
       () => createMap(37.5665, 126.9780),
       { timeout: 5000 }
     );
