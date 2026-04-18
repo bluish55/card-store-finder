@@ -53,7 +53,7 @@ function getCurrentLocation() {
 
 function getPinSize() {
   const level = map.getLevel();
-  return Math.min(24, Math.max(14, 22 - (level - 3) * 2));
+  return Math.min(28, Math.max(14, 26 - (level - 3) * 2));
 }
 
 function updateMarkerVisibility() {
@@ -162,15 +162,59 @@ function openSearch() {
 
 function closeSearch() {
   document.getElementById('search-bar').classList.add('hidden');
+  document.getElementById('search-dropdown').classList.add('hidden');
   document.getElementById('search-btn').classList.remove('hidden');
   document.getElementById('menu-btn').classList.remove('hidden');
   document.getElementById('filter-bar').classList.remove('hidden');
   document.getElementById('search-input').value = '';
 }
 
+function updateDropdown(query) {
+  const dropdown = document.getElementById('search-dropdown');
+  if (query.length < 2) {
+    dropdown.classList.add('hidden');
+    return;
+  }
+
+  const q = query.toLowerCase();
+  const matched = allStores
+    .filter(s => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      return aStarts - bStarts;
+    })
+    .slice(0, 5);
+
+  if (!matched.length) {
+    dropdown.classList.add('hidden');
+    return;
+  }
+
+  dropdown.innerHTML = matched.map((s, i) =>
+    `<div class="search-item" data-index="${i}">
+      <div class="search-item-name">${s.name}</div>
+      <div class="search-item-sub">${s.address}</div>
+    </div>`
+  ).join('');
+
+  dropdown.querySelectorAll('.search-item').forEach((el, i) => {
+    el.addEventListener('click', () => {
+      map.setCenter(new kakao.maps.LatLng(matched[i].lat, matched[i].lng));
+      map.setLevel(3);
+      showPanel(matched[i]);
+      closeSearch();
+    });
+  });
+
+  dropdown.classList.remove('hidden');
+}
+
 function searchLocation() {
   const query = document.getElementById('search-input').value.trim();
   if (!query) return;
+
+  document.getElementById('search-dropdown').classList.add('hidden');
 
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.addressSearch(query, (result, status) => {
@@ -179,7 +223,6 @@ function searchLocation() {
       map.setLevel(4);
       closeSearch();
     } else {
-      // 주소 검색 실패 시 키워드 검색 시도
       const places = new kakao.maps.services.Places();
       places.keywordSearch(query, (result, status) => {
         if (status === kakao.maps.services.Status.OK) {
@@ -201,6 +244,10 @@ window.addEventListener('load', () => {
   // 검색
   document.getElementById('search-btn').addEventListener('click', openSearch);
   document.getElementById('search-close').addEventListener('click', closeSearch);
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    updateDropdown(e.target.value.trim());
+  });
+
   document.getElementById('search-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') searchLocation();
   });
