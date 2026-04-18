@@ -256,6 +256,22 @@ body {
   transform: translateX(20px);
 }
 
+/* 내 위치 버튼 */
+#location-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  color: black;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 10;
+  padding: 0;
+}
+
 /* 위치 권한 팝업 */
 #location-popup {
   position: fixed;
@@ -320,6 +336,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+#store-list {
+  min-height: 580px;
 }
 
 input, select {

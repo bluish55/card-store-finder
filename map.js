@@ -284,4 +284,12 @@ window.addEventListener('load', () => {
     setLocationPref('false');
     updateToggleUI();
   });
+
+  document.getElementById('location-btn').addEventListener('click', () => {
+    if (getLocationPref() !== 'true') {
+      showLocationPopup();
+    } else {
+      getCurrentLocation();
+    }
+  });
 });

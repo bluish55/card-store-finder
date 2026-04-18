@@ -44,7 +44,18 @@
     <div id="upload-status"></div>
 
     <h3>판매점 목록</h3>
+    <div id="list-filter">
+      <button class="list-filter-btn active" data-type="all">전체</button>
+      <button class="list-filter-btn" data-type="자판기">자판기</button>
+      <button class="list-filter-btn" data-type="편의점">편의점</button>
+      <button class="list-filter-btn" data-type="문방구">문방구</button>
+    </div>
     <div id="store-list"></div>
+    <div id="pagination">
+      <button id="prev-btn" onclick="changePage(-1)">이전</button>
+      <span id="page-info"></span>
+      <button id="next-btn" onclick="changePage(1)">다음</button>
+    </div>
   </div>
 
   <script src="config.js"></script>
