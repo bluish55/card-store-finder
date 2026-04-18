@@ -2,6 +2,7 @@ let db;
 let map;
 let markers = [];
 let markerElements = [];
+let renderedStores = [];
 let allStores = [];
 let activeType = 'all';
 
@@ -61,8 +62,9 @@ function updateMarkerVisibility() {
   const visible = level <= 9;
   const size = getPinSize();
   markers.forEach((m, i) => {
-    m.setMap(visible ? map : null);
-    if (markerElements[i]) markerElements[i].style.fontSize = size + 'px';
+    const isVending = renderedStores[i]?.type === '자판기';
+    m.setMap((visible || isVending) ? map : null);
+    if (markerElements[i]) { markerElements[i].style.width = size + 'px'; markerElements[i].style.height = size + 'px'; }
   });
 }
 
@@ -105,12 +107,13 @@ function renderMarkers(stores) {
   markers.forEach(m => m.setMap(null));
   markers = [];
   markerElements = [];
+  renderedStores = [];
 
-  const typeEmojis = {
-    '자판기': '🎰',
-    '편의점': '🏪',
-    '문방구': '✏️',
-    '카드샵': '🃏'
+  const typeIcons = {
+    '자판기': 'icons/vending.png',
+    '편의점': 'icons/convenience.png',
+    '문방구': 'icons/stationery.png',
+    '카드샵': 'icons/stationery.png'
   };
 
   const level = map.getLevel();
@@ -118,16 +121,17 @@ function renderMarkers(stores) {
   const size = getPinSize();
 
   stores.forEach(store => {
-    const el = document.createElement('div');
-    el.style.cssText = `font-size:${size}px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));line-height:1`;
-    el.textContent = typeEmojis[store.type] || '📍';
+    const el = document.createElement('img');
+    el.src = typeIcons[store.type] || 'icons/vending.png';
+    el.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));object-fit:contain`;
     markerElements.push(el);
+    renderedStores.push(store);
 
     const overlay = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(store.lat, store.lng),
       content: el
     });
-    overlay.setMap(visible ? map : null);
+    overlay.setMap((visible || store.type === '자판기') ? map : null);
     markers.push(overlay);
 
     el.addEventListener('click', () => showPanel(store));
