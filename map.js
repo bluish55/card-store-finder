@@ -1,6 +1,7 @@
 let db;
 let map;
 let markers = [];
+let markerElements = [];
 let allStores = [];
 let activeType = 'all';
 
@@ -50,6 +51,21 @@ function getCurrentLocation() {
   );
 }
 
+function getPinSize() {
+  const level = map.getLevel();
+  return Math.min(24, Math.max(14, 22 - (level - 3) * 2));
+}
+
+function updateMarkerVisibility() {
+  const level = map.getLevel();
+  const visible = level <= 7;
+  const size = getPinSize();
+  markers.forEach((m, i) => {
+    m.setMap(visible ? map : null);
+    if (markerElements[i]) markerElements[i].style.fontSize = size + 'px';
+  });
+}
+
 function createMap(lat, lng) {
   const container = document.getElementById('map');
   const options = {
@@ -57,6 +73,7 @@ function createMap(lat, lng) {
     level: 3
   };
   map = new kakao.maps.Map(container, options);
+  kakao.maps.event.addListener(map, 'zoom_changed', updateMarkerVisibility);
   loadStores();
 }
 
@@ -87,6 +104,7 @@ async function loadStores() {
 function renderMarkers(stores) {
   markers.forEach(m => m.setMap(null));
   markers = [];
+  markerElements = [];
 
   const typeEmojis = {
     '자판기': '🎰',
@@ -94,16 +112,21 @@ function renderMarkers(stores) {
     '문방구': '✏️'
   };
 
+  const level = map.getLevel();
+  const visible = level <= 7;
+  const size = getPinSize();
+
   stores.forEach(store => {
     const el = document.createElement('div');
-    el.style.cssText = `font-size:22px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));line-height:1`;
+    el.style.cssText = `font-size:${size}px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));line-height:1`;
     el.textContent = typeEmojis[store.type] || '📍';
+    markerElements.push(el);
 
     const overlay = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(store.lat, store.lng),
       content: el
     });
-    overlay.setMap(map);
+    overlay.setMap(visible ? map : null);
     markers.push(overlay);
 
     el.addEventListener('click', () => showPanel(store));
@@ -132,6 +155,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 function openSearch() {
   document.getElementById('search-bar').classList.remove('hidden');
   document.getElementById('search-btn').classList.add('hidden');
+  document.getElementById('menu-btn').classList.add('hidden');
   document.getElementById('filter-bar').classList.add('hidden');
   document.getElementById('search-input').focus();
 }
@@ -139,6 +163,7 @@ function openSearch() {
 function closeSearch() {
   document.getElementById('search-bar').classList.add('hidden');
   document.getElementById('search-btn').classList.remove('hidden');
+  document.getElementById('menu-btn').classList.remove('hidden');
   document.getElementById('filter-bar').classList.remove('hidden');
   document.getElementById('search-input').value = '';
 }
