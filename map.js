@@ -4,22 +4,63 @@ let markers = [];
 let allStores = [];
 let activeType = 'all';
 
+const DEFAULT_LAT = 37.5447;
+const DEFAULT_LNG = 127.0558;
+
 const typeColors = {
   '자판기': '#e53935',
   '편의점': '#1e88e5',
   '문방구': '#43a047'
 };
 
-async function initMap() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { alert(pos.coords.latitude + ', ' + pos.coords.longitude); createMap(pos.coords.latitude, pos.coords.longitude); },
-      () => createMap(37.5665, 126.9780),
-      { timeout: 5000 }
-    );
-  } else {
-    createMap(37.5665, 126.9780);
+function isLocationEnabled() {
+  return localStorage.getItem('locationEnabled') !== 'false';
+}
+
+function setLocationEnabled(val) {
+  localStorage.setItem('locationEnabled', String(val));
+}
+
+function initMap() {
+  createMap(DEFAULT_LAT, DEFAULT_LNG);
+  if (isLocationEnabled()) {
+    checkAndRequestLocation();
   }
+  updateToggleUI();
+}
+
+function checkAndRequestLocation() {
+  if (!navigator.geolocation) return;
+
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' })
+      .then(result => {
+        if (result.status === 'granted') {
+          getCurrentLocation();
+        } else if (result.status === 'denied') {
+          showDeniedBanner();
+        } else {
+          showLocationPopup();
+        }
+      })
+      .catch(() => showLocationPopup());
+  } else {
+    showLocationPopup();
+  }
+}
+
+function getCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
+    },
+    (err) => {
+      if (err.code === err.PERMISSION_DENIED) {
+        showDeniedBanner();
+      }
+    },
+    { timeout: 10000 }
+  );
 }
 
 function createMap(lat, lng) {
@@ -30,6 +71,23 @@ function createMap(lat, lng) {
   };
   map = new kakao.maps.Map(container, options);
   loadStores();
+}
+
+function showLocationPopup() {
+  document.getElementById('location-popup').classList.remove('hidden');
+}
+
+function hideLocationPopup() {
+  document.getElementById('location-popup').classList.add('hidden');
+}
+
+function showDeniedBanner() {
+  document.getElementById('location-denied-banner').classList.remove('hidden');
+}
+
+function updateToggleUI() {
+  const toggle = document.getElementById('location-toggle');
+  if (toggle) toggle.checked = isLocationEnabled();
 }
 
 async function loadStores() {
@@ -81,4 +139,36 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 window.addEventListener('load', () => {
   db = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
   initMap();
+
+  // 햄버거 메뉴
+  document.getElementById('menu-btn').addEventListener('click', () => {
+    document.getElementById('menu-overlay').classList.remove('hidden');
+    document.getElementById('side-menu').classList.remove('hidden');
+  });
+
+  document.getElementById('menu-overlay').addEventListener('click', () => {
+    document.getElementById('menu-overlay').classList.add('hidden');
+    document.getElementById('side-menu').classList.add('hidden');
+  });
+
+  // 위치 토글
+  document.getElementById('location-toggle').addEventListener('change', (e) => {
+    setLocationEnabled(e.target.checked);
+    if (e.target.checked) {
+      document.getElementById('location-denied-banner').classList.add('hidden');
+      checkAndRequestLocation();
+    }
+  });
+
+  // 위치 팝업 버튼
+  document.getElementById('popup-allow-btn').addEventListener('click', () => {
+    hideLocationPopup();
+    getCurrentLocation();
+  });
+
+  document.getElementById('popup-skip-btn').addEventListener('click', () => {
+    hideLocationPopup();
+    setLocationEnabled(false);
+    updateToggleUI();
+  });
 });
