@@ -52,6 +52,16 @@ body {
   z-index: 10;
 }
 
+#panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  color: #999;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
 #panel-handle {
   width: 40px;
   height: 4px;
