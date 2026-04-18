@@ -14,7 +14,8 @@ async function initMap() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (pos) => createMap(pos.coords.latitude, pos.coords.longitude),
-      () => createMap(37.5665, 126.9780)
+      () => createMap(37.5665, 126.9780),
+      { timeout: 5000 }
     );
   } else {
     createMap(37.5665, 126.9780);
