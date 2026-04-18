@@ -117,6 +117,54 @@ body {
   word-break: break-all;
 }
 
+/* 검색 버튼 */
+#search-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  color: black;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 100;
+  padding: 0;
+}
+
+/* 검색 바 */
+#search-bar {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  padding: 0 12px;
+  height: 40px;
+  z-index: 110;
+}
+
+#search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: none;
+  padding: 0 0 0 6px;
+}
+
+#search-close {
+  background: none;
+  color: #999;
+  font-size: 16px;
+  padding: 4px 4px 4px 8px;
+}
+
 /* 위치 토글 메뉴 아이템 */
 #location-menu-item {
   display: flex;

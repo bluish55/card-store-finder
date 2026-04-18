@@ -129,9 +129,56 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   });
 });
 
+function openSearch() {
+  document.getElementById('search-bar').classList.remove('hidden');
+  document.getElementById('search-btn').classList.add('hidden');
+  document.getElementById('filter-bar').classList.add('hidden');
+  document.getElementById('search-input').focus();
+}
+
+function closeSearch() {
+  document.getElementById('search-bar').classList.add('hidden');
+  document.getElementById('search-btn').classList.remove('hidden');
+  document.getElementById('filter-bar').classList.remove('hidden');
+  document.getElementById('search-input').value = '';
+}
+
+function searchLocation() {
+  const query = document.getElementById('search-input').value.trim();
+  if (!query) return;
+
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.addressSearch(query, (result, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      map.setCenter(new kakao.maps.LatLng(result[0].y, result[0].x));
+      map.setLevel(4);
+      closeSearch();
+    } else {
+      // 주소 검색 실패 시 키워드 검색 시도
+      const places = new kakao.maps.services.Places();
+      places.keywordSearch(query, (result, status) => {
+        if (status === kakao.maps.services.Status.OK) {
+          map.setCenter(new kakao.maps.LatLng(result[0].y, result[0].x));
+          map.setLevel(4);
+          closeSearch();
+        } else {
+          alert('검색 결과가 없습니다.');
+        }
+      });
+    }
+  });
+}
+
 window.addEventListener('load', () => {
   db = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
   initMap();
+
+  // 검색
+  document.getElementById('search-btn').addEventListener('click', openSearch);
+  document.getElementById('search-close').addEventListener('click', closeSearch);
+  document.getElementById('search-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchLocation();
+  });
 
   // 햄버거 메뉴
   document.getElementById('menu-btn').addEventListener('click', () => {
