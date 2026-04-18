@@ -88,10 +88,16 @@ function renderMarkers(stores) {
   markers.forEach(m => m.setMap(null));
   markers = [];
 
+  const typeEmojis = {
+    '자판기': '🎰',
+    '편의점': '🏪',
+    '문방구': '✏️'
+  };
+
   stores.forEach(store => {
-    const color = typeColors[store.type] || '#999';
     const el = document.createElement('div');
-    el.style.cssText = `width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);cursor:pointer`;
+    el.style.cssText = `font-size:22px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));line-height:1`;
+    el.textContent = typeEmojis[store.type] || '📍';
 
     const overlay = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(store.lat, store.lng),
