@@ -109,7 +109,8 @@ function renderMarkers(stores) {
   const typeEmojis = {
     '자판기': '🎰',
     '편의점': '🏪',
-    '문방구': '✏️'
+    '문방구': '✏️',
+    '카드샵': '🃏'
   };
 
   const level = map.getLevel();
