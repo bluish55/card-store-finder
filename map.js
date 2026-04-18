@@ -58,7 +58,7 @@ function getPinSize() {
 
 function updateMarkerVisibility() {
   const level = map.getLevel();
-  const visible = level <= 7;
+  const visible = level <= 9;
   const size = getPinSize();
   markers.forEach((m, i) => {
     m.setMap(visible ? map : null);
@@ -113,7 +113,7 @@ function renderMarkers(stores) {
   };
 
   const level = map.getLevel();
-  const visible = level <= 7;
+  const visible = level <= 9;
   const size = getPinSize();
 
   stores.forEach(store => {
