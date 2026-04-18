@@ -13,40 +13,25 @@ const typeColors = {
   '문방구': '#43a047'
 };
 
-function isLocationEnabled() {
-  return localStorage.getItem('locationEnabled') !== 'false';
+function getLocationPref() {
+  return localStorage.getItem('locationEnabled'); // null(첫방문) | 'true' | 'false'
 }
 
-function setLocationEnabled(val) {
+function setLocationPref(val) {
   localStorage.setItem('locationEnabled', String(val));
 }
 
 function initMap() {
   createMap(DEFAULT_LAT, DEFAULT_LNG);
-  if (isLocationEnabled()) {
-    checkAndRequestLocation();
-  }
-  updateToggleUI();
-}
 
-function checkAndRequestLocation() {
-  if (!navigator.geolocation) return;
-
-  if (navigator.permissions) {
-    navigator.permissions.query({ name: 'geolocation' })
-      .then(result => {
-        if (result.status === 'granted') {
-          getCurrentLocation();
-        } else if (result.status === 'denied') {
-          showDeniedBanner();
-        } else {
-          showLocationPopup();
-        }
-      })
-      .catch(() => showLocationPopup());
-  } else {
+  const pref = getLocationPref();
+  if (pref === null) {
     showLocationPopup();
+  } else if (pref === 'true') {
+    getCurrentLocation();
   }
+
+  updateToggleUI();
 }
 
 function getCurrentLocation() {
@@ -56,6 +41,8 @@ function getCurrentLocation() {
     },
     (err) => {
       if (err.code === err.PERMISSION_DENIED) {
+        setLocationPref('false');
+        updateToggleUI();
         showDeniedBanner();
       }
     },
@@ -87,7 +74,7 @@ function showDeniedBanner() {
 
 function updateToggleUI() {
   const toggle = document.getElementById('location-toggle');
-  if (toggle) toggle.checked = isLocationEnabled();
+  if (toggle) toggle.checked = getLocationPref() === 'true';
 }
 
 async function loadStores() {
@@ -153,22 +140,23 @@ window.addEventListener('load', () => {
 
   // 위치 토글
   document.getElementById('location-toggle').addEventListener('change', (e) => {
-    setLocationEnabled(e.target.checked);
+    setLocationPref(e.target.checked);
     if (e.target.checked) {
       document.getElementById('location-denied-banner').classList.add('hidden');
-      checkAndRequestLocation();
+      getCurrentLocation();
     }
   });
 
   // 위치 팝업 버튼
   document.getElementById('popup-allow-btn').addEventListener('click', () => {
     hideLocationPopup();
+    setLocationPref('true');
     getCurrentLocation();
   });
 
   document.getElementById('popup-skip-btn').addEventListener('click', () => {
     hideLocationPopup();
-    setLocationEnabled(false);
+    setLocationPref('false');
     updateToggleUI();
   });
 });
