@@ -109,7 +109,7 @@
     sortBtn.addEventListener('click', () => {
       if (userLat === null) {
         gpsMsg.classList.remove('hidden');
-        setTimeout(() => gpsMsg.classList.add('hidden'), 3000);
+        setTimeout(() => gpsMsg.classList.add('hidden'), 2000);
         return;
       }
       sortMode = sortMode === 'distance' ? 'alpha' : 'distance';
