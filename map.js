@@ -346,11 +346,9 @@ window.addEventListener('load', () => {
 
   document.getElementById('list-btn').addEventListener('click', () => {
     const bounds = map.getBounds();
-    const sw = bounds.getSouthWest();
-    const ne = bounds.getNorthEast();
-    const visible = renderedStores.filter(s =>
-      s.lat >= sw.getLat() && s.lat <= ne.getLat() &&
-      s.lng >= sw.getLng() && s.lng <= ne.getLng()
+    const visible = renderedStores.filter((s, i) =>
+      markers[i] && markers[i].getMap() !== null &&
+      bounds.contain(new kakao.maps.LatLng(s.lat, s.lng))
     );
     localStorage.setItem('listStores', JSON.stringify(visible));
     window.location.href = 'list.html';
