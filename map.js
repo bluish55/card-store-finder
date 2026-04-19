@@ -300,6 +300,14 @@ window.addEventListener('load', () => {
   db = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
   initMap();
 
+  // 지도 위 UI 요소 터치 시 지도 이동 방지
+  ['#top-row', '#store-panel', '#list-btn', '#location-btn', '#side-menu', '#location-popup', '#location-denied-banner'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.addEventListener('touchstart', e => e.stopPropagation());
+    el.addEventListener('touchmove', e => e.stopPropagation());
+  });
+
   // 검색
   document.getElementById('search-btn').addEventListener('click', openSearch);
   document.getElementById('search-close').addEventListener('click', closeSearch);
