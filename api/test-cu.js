@@ -32,6 +32,7 @@ module.exports = async function handler(req, res) {
     });
 
     const searchData = await searchRes.json().catch(() => null);
+    result.searchRaw = searchData; // 구조 확인용
     const products = searchData?.goodsList || [];
     result.products = products.map(p => ({
       name: p.goodsNm,
