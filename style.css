@@ -64,18 +64,33 @@ body {
   padding-right: 28px;
 }
 
-#store-name-row h2 {
+#store-name-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1;
+  min-width: 0;
+}
+
+#store-name-left h2 {
   font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#store-distance {
+  font-size: 13px;
+  color: #888;
+  flex-shrink: 0;
 }
 
 #fav-btn {
   background: none;
-  padding: 4px 6px;
-  font-size: 20px;
+  padding: 2px;
   flex-shrink: 0;
-  border: 1.5px solid #333;
-  border-radius: 8px;
+  border: none;
+  line-height: 0;
 }
 
 #panel-close {
@@ -316,6 +331,23 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   z-index: 100;
   padding: 0;
+}
+
+/* 목록 버튼 */
+#list-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: white;
+  color: black;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 100;
+  white-space: nowrap;
 }
 
 /* 위치 권한 팝업 */

@@ -6,6 +6,8 @@ let renderedStores = [];
 let allStores = [];
 let activeType = 'all';
 let currentStore = null;
+let userLat = null;
+let userLng = null;
 
 function getFavorites() {
   return JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -53,10 +55,21 @@ function initMap() {
   updateToggleUI();
 }
 
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+}
+
 function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      map.setCenter(new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      map.setCenter(new kakao.maps.LatLng(userLat, userLng));
     },
     (err) => {
       if (err.code === err.PERMISSION_DENIED) {
@@ -155,9 +168,15 @@ function renderMarkers(stores) {
   });
 }
 
+function heartSVG(filled) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24">
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#333" stroke-width="1.5" fill="${filled ? '#e53935' : 'white'}"/>
+  </svg>`;
+}
+
 function updateFavBtn(id) {
   const btn = document.getElementById('fav-btn');
-  btn.textContent = isFavorite(id) ? '❤️' : '🤍';
+  btn.innerHTML = heartSVG(isFavorite(id));
 }
 
 function showPanel(store) {
@@ -170,6 +189,12 @@ function showPanel(store) {
   document.getElementById('navi-btn').href =
     `https://map.kakao.com/link/to/${encodeURIComponent(store.name)},${store.lat},${store.lng}`;
   updateFavBtn(store.id);
+  const distEl = document.getElementById('store-distance');
+  if (userLat !== null && userLng !== null) {
+    distEl.textContent = calcDistance(userLat, userLng, store.lat, store.lng);
+  } else {
+    distEl.textContent = '';
+  }
   document.getElementById('store-panel').classList.remove('hidden');
 }
 
@@ -317,6 +342,18 @@ window.addEventListener('load', () => {
     hideLocationPopup();
     setLocationPref('false');
     updateToggleUI();
+  });
+
+  document.getElementById('list-btn').addEventListener('click', () => {
+    const bounds = map.getBounds();
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const visible = renderedStores.filter(s =>
+      s.lat >= sw.getLat() && s.lat <= ne.getLat() &&
+      s.lng >= sw.getLng() && s.lng <= ne.getLng()
+    );
+    sessionStorage.setItem('listStores', JSON.stringify(visible));
+    window.location.href = 'list.html';
   });
 
   document.getElementById('fav-btn').addEventListener('click', () => {

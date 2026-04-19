@@ -1,0 +1,130 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: #f0f0f0;
+}
+
+#header {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+#back-btn {
+  background: none;
+  color: #333;
+  font-size: 20px;
+  padding: 4px 8px;
+  border: none;
+}
+
+#title {
+  font-size: 17px;
+  color: #333;
+}
+
+#store-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.store-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  padding: 16px;
+}
+
+.store-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.store-name-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.store-name {
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.store-distance {
+  font-size: 13px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.fav-btn {
+  background: none;
+  padding: 2px;
+  flex-shrink: 0;
+  border: none;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.store-type {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.store-address,
+.store-phone,
+.store-items {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.panel-icon {
+  margin-right: 6px;
+}
+
+.phone-icon {
+  margin-right: 6px;
+  filter: invert(48%) sepia(98%) saturate(400%) hue-rotate(90deg) brightness(95%) contrast(105%);
+}
+
+.navi-btn {
+  display: block;
+  margin-top: 12px;
+  padding: 10px;
+  background: #FEE500;
+  color: #191919;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#empty {
+  text-align: center;
+  color: #999;
+  margin-top: 40px;
+  font-size: 15px;
+}

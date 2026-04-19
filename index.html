@@ -51,13 +51,17 @@
   </div>
 
   <button id="location-btn">🏠</button>
+  <button id="list-btn">리스트로 보기</button>
 
   <div id="store-panel" class="hidden">
     <div id="panel-handle"></div>
     <button id="panel-close" onclick="document.getElementById('store-panel').classList.add('hidden')">✕</button>
     <div id="store-name-row">
-      <h2 id="store-name"></h2>
-      <button id="fav-btn">🤍</button>
+      <div id="store-name-left">
+        <h2 id="store-name"></h2>
+        <button id="fav-btn">🤍</button>
+      </div>
+      <span id="store-distance"></span>
     </div>
     <p id="store-type"></p>
     <p id="store-address"><span class="panel-icon">📍</span><span id="store-address-text"></span></p>
