@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const result = {};
 
   try {
@@ -42,10 +42,11 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    // Step 2: 성수동 기준 재고 조회 (첫 번째 상품)
-    const { itemCode, itemName } = products[0];
-    const lat = 37.5447;
-    const lng = 127.0558;
+    // Step 2: 강남역 기준 재고 조회 (초전브레이커 고정)
+    const itemCode = '8809945338207';
+    const itemName = '포켓몬카드)초전브레이커';
+    const lat = 37.4979;
+    const lng = 127.0276;
 
     const stockUrl = new URL('https://b2c-bff.woodongs.com/api/bff/v2/store/stock');
     stockUrl.searchParams.set('itemCode', itemCode);
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
     stockUrl.searchParams.set('centerPositionYCoordination', String(lat));
     stockUrl.searchParams.set('radiusCondition', '3');
     stockUrl.searchParams.set('serviceCode', '01');
-    stockUrl.searchParams.set('realTimeStockYn', 'Y');
+    stockUrl.searchParams.set('realTimeStockYn', 'N');
 
     const stockRes = await fetch(stockUrl.toString(), {
       headers: { 'Accept': 'application/json, text/plain, */*' },
