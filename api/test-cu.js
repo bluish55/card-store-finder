@@ -32,12 +32,12 @@ module.exports = async function handler(req, res) {
     });
 
     const searchData = await searchRes.json().catch(() => null);
-    result.searchRaw = searchData; // 구조 확인용
-    const products = searchData?.goodsList || [];
+    const rows = searchData?.data?.stockResult?.result?.rows || [];
+    const products = rows.map(r => r.fields);
     result.products = products.map(p => ({
-      name: p.goodsNm,
-      itemCd: p.barCd,
-      onItemNo: p.onItemNo,
+      name: p.item_nm,
+      itemCd: p.item_cd,
+      onItemNo: p.on_item_no,
     }));
 
     if (!products.length) {
@@ -46,8 +46,8 @@ module.exports = async function handler(req, res) {
 
     // Step 3: 첫 번째 상품으로 강남역 기준 재고 조회
     const first = products[0];
-    const itemCd = first.barCd;
-    const onItemNo = first.onItemNo;
+    const itemCd = first.item_cd;
+    const onItemNo = first.on_item_no;
 
     const storeRes = await fetch('https://www.pocketcu.co.kr/api/store', {
       method: 'POST',
