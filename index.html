@@ -9,23 +9,25 @@
 <body>
   <div id="map"></div>
 
-  <div id="filter-bar">
-    <button class="filter-btn active" data-type="all">전체</button>
-    <button class="filter-btn" data-type="자판기">자판기</button>
-    <button class="filter-btn" data-type="편의점">편의점</button>
-    <button class="filter-btn" data-type="문방구">문방구</button>
-    <button class="filter-btn" data-type="카드샵">카드샵</button>
-    <button class="filter-btn" data-type="찜" id="fav-filter-btn">❤️ 찜</button>
-  </div>
-
-  <button id="search-btn">🔍</button>
-  <div id="search-bar" class="hidden">
-    <input type="text" id="search-input" placeholder="가게명 또는 지역명 입력">
-    <button id="search-close">✕</button>
+  <div id="top-row">
+    <button id="search-btn">🔍</button>
+    <div id="filter-bar">
+      <button class="filter-btn active" data-type="all">전체</button>
+      <button class="filter-btn" data-type="찜" id="fav-filter-btn">❤️ 찜</button>
+      <button class="filter-btn" data-type="자판기">자판기</button>
+      <button class="filter-btn" data-type="카드샵">카드샵</button>
+      <button class="filter-btn" data-type="편의점">편의점</button>
+      <button class="filter-btn" data-type="문방구">문방구</button>
+    </div>
+    <button id="menu-btn">☰</button>
+    <div id="search-bar" class="hidden">
+      <input type="text" id="search-input" placeholder="가게명 또는 지역명 입력">
+      <button id="search-close">✕</button>
+    </div>
   </div>
   <div id="search-dropdown" class="hidden"></div>
 
-  <button id="menu-btn">☰</button>
+
   <div id="menu-overlay" class="hidden"></div>
   <div id="side-menu" class="hidden">
     <div id="location-menu-item">
