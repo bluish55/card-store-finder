@@ -10,7 +10,9 @@
   <div id="header">
     <button id="back-btn" onclick="history.back()">←</button>
     <h1 id="title">판매점 목록</h1>
+    <button id="sort-btn"></button>
   </div>
+  <div id="gps-msg" class="hidden">GPS가 꺼져있어서 기능을 사용할 수 없습니다.</div>
   <div id="store-list"></div>
 
   <script>
@@ -32,19 +34,20 @@
         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#333" stroke-width="1.5" fill="${filled ? '#e53935' : 'white'}"/>
       </svg>`;
     }
-
     function onFavClick(btn) {
       const id = parseInt(btn.dataset.id);
       toggleFavorite(id);
       btn.innerHTML = heartSVG(isFavorite(id));
     }
 
-    function calcDistance(lat1, lng1, lat2, lng2) {
+    function calcDistanceNum(lat1, lng1, lat2, lng2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLng = (lng2 - lng1) * Math.PI / 180;
       const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    function formatDistance(dist) {
       return dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
     }
 
@@ -57,29 +60,65 @@
     localStorage.removeItem('listUserLat');
     localStorage.removeItem('listUserLng');
 
+    let sortMode = userLat !== null ? 'distance' : 'alpha';
     const list = document.getElementById('store-list');
+    const sortBtn = document.getElementById('sort-btn');
+    const gpsMsg = document.getElementById('gps-msg');
 
-    if (!stores.length) {
-      list.innerHTML = '<p id="empty">표시된 가게가 없어요.</p>';
-    } else {
-      document.getElementById('title').textContent = `판매점 목록 (${stores.length})`;
-      list.innerHTML = stores.map(s => `
-        <div class="store-card">
-          <div class="store-name-row">
-            <div class="store-name-left">
-              <h2 class="store-name">${s.name}</h2>
-              <button class="fav-btn" data-id="${s.id}" onclick="onFavClick(this)">${heartSVG(isFavorite(s.id))}</button>
-            </div>
-            ${userLat !== null ? `<span class="store-distance">${calcDistance(userLat, userLng, s.lat, s.lng)}</span>` : ''}
-          </div>
-          <p class="store-type">${s.type}</p>
-          <p class="store-address"><span class="panel-icon">📍</span>${s.address}</p>
-          <p class="store-phone"><span class="phone-icon">📞</span>${s.phone || '미등록'}</p>
-          ${s.items ? `<p class="store-items">${s.items}</p>` : ''}
-          <a class="navi-btn" href="https://map.kakao.com/link/to/${encodeURIComponent(s.name)},${s.lat},${s.lng}" target="_blank" rel="noopener">길찾기</a>
-        </div>
-      `).join('');
+    function updateSortBtn() {
+      sortBtn.textContent = sortMode === 'distance' ? '📍' : '가나다';
     }
+
+    function getSorted() {
+      if (sortMode === 'distance' && userLat !== null) {
+        return [...stores].sort((a, b) =>
+          calcDistanceNum(userLat, userLng, a.lat, a.lng) - calcDistanceNum(userLat, userLng, b.lat, b.lng)
+        );
+      }
+      return [...stores].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    }
+
+    function render() {
+      if (!stores.length) {
+        list.innerHTML = '<p id="empty">표시된 가게가 없어요.</p>';
+        return;
+      }
+      document.getElementById('title').textContent = `판매점 목록 (${stores.length})`;
+      const sorted = getSorted();
+      list.innerHTML = sorted.map(s => {
+        const dist = userLat !== null ? calcDistanceNum(userLat, userLng, s.lat, s.lng) : null;
+        return `
+          <div class="store-card">
+            <div class="store-name-row">
+              <div class="store-name-left">
+                <h2 class="store-name">${s.name}</h2>
+                <button class="fav-btn" data-id="${s.id}" onclick="onFavClick(this)">${heartSVG(isFavorite(s.id))}</button>
+              </div>
+              ${dist !== null ? `<span class="store-distance">${formatDistance(dist)}</span>` : ''}
+            </div>
+            <p class="store-type">${s.type}</p>
+            <p class="store-address"><span class="panel-icon">📍</span>${s.address}</p>
+            <p class="store-phone"><span class="phone-icon">📞</span>${s.phone || '미등록'}</p>
+            ${s.items ? `<p class="store-items">${s.items}</p>` : ''}
+            <a class="navi-btn" href="https://map.kakao.com/link/to/${encodeURIComponent(s.name)},${s.lat},${s.lng}" target="_blank" rel="noopener">길찾기</a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    sortBtn.addEventListener('click', () => {
+      if (userLat === null) {
+        gpsMsg.classList.remove('hidden');
+        setTimeout(() => gpsMsg.classList.add('hidden'), 3000);
+        return;
+      }
+      sortMode = sortMode === 'distance' ? 'alpha' : 'distance';
+      updateSortBtn();
+      render();
+    });
+
+    updateSortBtn();
+    render();
   </script>
 </body>
 </html>
