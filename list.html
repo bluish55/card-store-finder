@@ -49,14 +49,19 @@
     }
 
     const stores = JSON.parse(localStorage.getItem('listStores') || '[]');
+    const latStr = localStorage.getItem('listUserLat');
+    const lngStr = localStorage.getItem('listUserLng');
+    const userLat = latStr ? parseFloat(latStr) : null;
+    const userLng = lngStr ? parseFloat(lngStr) : null;
     localStorage.removeItem('listStores');
+    localStorage.removeItem('listUserLat');
+    localStorage.removeItem('listUserLng');
+
     const list = document.getElementById('store-list');
 
-    function renderStores(userLat, userLng) {
-      if (!stores.length) {
-        list.innerHTML = '<p id="empty">표시된 가게가 없어요.</p>';
-        return;
-      }
+    if (!stores.length) {
+      list.innerHTML = '<p id="empty">표시된 가게가 없어요.</p>';
+    } else {
       document.getElementById('title').textContent = `판매점 목록 (${stores.length})`;
       list.innerHTML = stores.map(s => `
         <div class="store-card">
@@ -74,16 +79,6 @@
           <a class="navi-btn" href="https://map.kakao.com/link/to/${encodeURIComponent(s.name)},${s.lat},${s.lng}" target="_blank" rel="noopener">길찾기</a>
         </div>
       `).join('');
-    }
-
-    if (navigator.geolocation && localStorage.getItem('locationEnabled') === 'true') {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => renderStores(pos.coords.latitude, pos.coords.longitude),
-        () => renderStores(null, null),
-        { timeout: 5000 }
-      );
-    } else {
-      renderStores(null, null);
     }
   </script>
 </body>

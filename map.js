@@ -359,6 +359,8 @@ window.addEventListener('load', () => {
       bounds.contain(new kakao.maps.LatLng(s.lat, s.lng))
     );
     localStorage.setItem('listStores', JSON.stringify(visible));
+    localStorage.setItem('listUserLat', userLat !== null ? String(userLat) : '');
+    localStorage.setItem('listUserLng', userLng !== null ? String(userLng) : '');
     window.location.href = 'list.html';
   });
 

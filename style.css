@@ -4,21 +4,16 @@
   box-sizing: border-box;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  position: fixed;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
 body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 #map {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
 }
 
 #top-row {
