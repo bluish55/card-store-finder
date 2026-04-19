@@ -15,6 +15,7 @@
     <button class="filter-btn" data-type="편의점">편의점</button>
     <button class="filter-btn" data-type="문방구">문방구</button>
     <button class="filter-btn" data-type="카드샵">카드샵</button>
+    <button class="filter-btn" data-type="찜" id="fav-filter-btn">❤️ 찜</button>
   </div>
 
   <button id="search-btn">🔍</button>
@@ -54,11 +55,15 @@
   <div id="store-panel" class="hidden">
     <div id="panel-handle"></div>
     <button id="panel-close" onclick="document.getElementById('store-panel').classList.add('hidden')">✕</button>
-    <h2 id="store-name"></h2>
+    <div id="store-name-row">
+      <h2 id="store-name"></h2>
+      <button id="fav-btn">🤍</button>
+    </div>
     <p id="store-type"></p>
-    <p id="store-address"></p>
-    <p id="store-phone"></p>
+    <p id="store-address"><span class="panel-icon">📍</span><span id="store-address-text"></span></p>
+    <p id="store-phone"><span class="phone-icon">📞</span><span id="store-phone-text"></span></p>
     <p id="store-items"></p>
+    <a id="navi-btn" target="_blank" rel="noopener">길찾기</a>
   </div>
 
   <script src="config.js"></script>

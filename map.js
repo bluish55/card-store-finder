@@ -5,6 +5,23 @@ let markerElements = [];
 let renderedStores = [];
 let allStores = [];
 let activeType = 'all';
+let currentStore = null;
+
+function getFavorites() {
+  return JSON.parse(localStorage.getItem('favorites') || '[]');
+}
+
+function isFavorite(id) {
+  return getFavorites().includes(id);
+}
+
+function toggleFavorite(id) {
+  const favs = getFavorites();
+  const idx = favs.indexOf(id);
+  if (idx === -1) favs.push(id);
+  else favs.splice(idx, 1);
+  localStorage.setItem('favorites', JSON.stringify(favs));
+}
 
 const DEFAULT_LAT = 37.5447;
 const DEFAULT_LNG = 127.0558;
@@ -138,12 +155,21 @@ function renderMarkers(stores) {
   });
 }
 
+function updateFavBtn(id) {
+  const btn = document.getElementById('fav-btn');
+  btn.textContent = isFavorite(id) ? '❤️' : '🤍';
+}
+
 function showPanel(store) {
+  currentStore = store;
   document.getElementById('store-name').textContent = store.name;
   document.getElementById('store-type').textContent = store.type;
-  document.getElementById('store-address').textContent = store.address;
-  document.getElementById('store-phone').textContent = store.phone || '전화번호 없음';
+  document.getElementById('store-address-text').textContent = store.address;
+  document.getElementById('store-phone-text').textContent = store.phone || '미등록';
   document.getElementById('store-items').textContent = store.items || '';
+  document.getElementById('navi-btn').href =
+    `https://map.kakao.com/link/to/${encodeURIComponent(store.name)},${store.lat},${store.lng}`;
+  updateFavBtn(store.id);
   document.getElementById('store-panel').classList.remove('hidden');
 }
 
@@ -152,7 +178,10 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeType = btn.dataset.type;
-    const filtered = activeType === 'all' ? allStores : allStores.filter(s => s.type === activeType);
+    let filtered;
+    if (activeType === 'all') filtered = allStores;
+    else if (activeType === '찜') filtered = allStores.filter(s => isFavorite(s.id));
+    else filtered = allStores.filter(s => s.type === activeType);
     renderMarkers(filtered);
   });
 });
@@ -288,6 +317,16 @@ window.addEventListener('load', () => {
     hideLocationPopup();
     setLocationPref('false');
     updateToggleUI();
+  });
+
+  document.getElementById('fav-btn').addEventListener('click', () => {
+    if (!currentStore) return;
+    toggleFavorite(currentStore.id);
+    updateFavBtn(currentStore.id);
+    if (activeType === '찜') {
+      const filtered = allStores.filter(s => isFavorite(s.id));
+      renderMarkers(filtered);
+    }
   });
 
   document.getElementById('location-btn').addEventListener('click', () => {

@@ -46,12 +46,36 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 33vh;
+  height: auto;
+  max-height: 33vh;
+  overflow-y: auto;
   background: white;
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
   padding: 16px;
-  z-index: 10;
+  z-index: 110;
+}
+
+#store-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 28px;
+}
+
+#store-name-row h2 {
+  flex: 1;
+  font-size: 17px;
+}
+
+#fav-btn {
+  background: none;
+  padding: 4px 6px;
+  font-size: 20px;
+  flex-shrink: 0;
+  border: 1.5px solid #333;
+  border-radius: 8px;
 }
 
 #panel-close {
@@ -64,12 +88,34 @@ body {
   padding: 4px 8px;
 }
 
+.panel-icon {
+  margin-right: 6px;
+}
+
+.phone-icon {
+  margin-right: 6px;
+  filter: invert(48%) sepia(98%) saturate(400%) hue-rotate(90deg) brightness(95%) contrast(105%);
+}
+
 #panel-handle {
   width: 40px;
   height: 4px;
   background: #ddd;
   border-radius: 2px;
   margin: 0 auto 16px;
+}
+
+#navi-btn {
+  display: block;
+  margin-top: 12px;
+  padding: 10px;
+  background: #FEE500;
+  color: #191919;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .hidden {
