@@ -48,7 +48,8 @@
       return dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
     }
 
-    const stores = JSON.parse(sessionStorage.getItem('listStores') || '[]');
+    const stores = JSON.parse(localStorage.getItem('listStores') || '[]');
+    localStorage.removeItem('listStores');
     const list = document.getElementById('store-list');
 
     function renderStores(userLat, userLng) {

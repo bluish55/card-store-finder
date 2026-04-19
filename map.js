@@ -352,7 +352,7 @@ window.addEventListener('load', () => {
       s.lat >= sw.getLat() && s.lat <= ne.getLat() &&
       s.lng >= sw.getLng() && s.lng <= ne.getLng()
     );
-    sessionStorage.setItem('listStores', JSON.stringify(visible));
+    localStorage.setItem('listStores', JSON.stringify(visible));
     window.location.href = 'list.html';
   });
 
