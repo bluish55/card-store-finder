@@ -86,9 +86,12 @@ function renderList() {
   const pageData = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   document.getElementById('store-list').innerHTML = pageData.map(s => `
-    <div style="border:1px solid #ddd;padding:12px;border-radius:8px;margin-bottom:8px;">
+    <div id="store-card-${s.id}" style="border:1px solid #ddd;padding:12px;border-radius:8px;margin-bottom:8px;">
       <strong>${s.name}</strong> (${s.type})<br>
       ${s.address}<br>
+      ${s.phone ? s.phone + '<br>' : ''}
+      ${s.items ? s.items + '<br>' : ''}
+      <button onclick="editStore('${s.id}')">수정</button>
       <button onclick="deleteStore('${s.id}')">삭제</button>
     </div>
   `).join('');
@@ -96,6 +99,50 @@ function renderList() {
   document.getElementById('page-info').textContent = `${currentPage} / ${totalPages} (${filtered.length}개)`;
   document.getElementById('prev-btn').disabled = currentPage <= 1;
   document.getElementById('next-btn').disabled = currentPage >= totalPages;
+}
+
+function editStore(id) {
+  const s = allStoreData.find(s => s.id == id);
+  const card = document.getElementById(`store-card-${s.id}`);
+  card.innerHTML = `
+    <input type="text" id="edit-name-${s.id}" value="${s.name}" placeholder="상호명"><br>
+    <input type="text" id="edit-address-${s.id}" value="${s.address}" placeholder="주소"><br>
+    <input type="text" id="edit-phone-${s.id}" value="${s.phone || ''}" placeholder="전화번호"><br>
+    <input type="text" id="edit-items-${s.id}" value="${s.items || ''}" placeholder="취급품목"><br>
+    <select id="edit-type-${s.id}">
+      <option value="자판기" ${s.type === '자판기' ? 'selected' : ''}>자판기</option>
+      <option value="편의점" ${s.type === '편의점' ? 'selected' : ''}>편의점</option>
+      <option value="문방구" ${s.type === '문방구' ? 'selected' : ''}>문방구</option>
+      <option value="카드샵" ${s.type === '카드샵' ? 'selected' : ''}>카드샵</option>
+    </select><br>
+    <button onclick="saveStore('${s.id}')">저장</button>
+    <button onclick="renderList()">취소</button>
+  `;
+}
+
+async function saveStore(id) {
+  const s = allStoreData.find(s => s.id == id);
+  const name = document.getElementById(`edit-name-${id}`).value;
+  const address = document.getElementById(`edit-address-${id}`).value;
+  const phone = document.getElementById(`edit-phone-${id}`).value;
+  const items = document.getElementById(`edit-items-${id}`).value;
+  const type = document.getElementById(`edit-type-${id}`).value;
+
+  let lat = s.lat, lng = s.lng;
+
+  if (address !== s.address) {
+    const res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
+      headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
+    });
+    const json = await res.json();
+    if (!json.documents.length) return alert('주소를 찾을 수 없어요.');
+    lat = parseFloat(json.documents[0].address.y);
+    lng = parseFloat(json.documents[0].address.x);
+  }
+
+  const { error } = await db.from('stores').update({ name, address, phone, items, type, lat, lng }).eq('id', id);
+  if (error) return alert('저장 실패: ' + error.message);
+  loadStoreList();
 }
 
 function changePage(dir) {
