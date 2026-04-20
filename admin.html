@@ -28,6 +28,8 @@
     <h3>판매점 추가</h3>
     <input type="text" id="name" placeholder="상호명">
     <input type="text" id="address" placeholder="주소">
+    <input type="number" id="lat" placeholder="위도 (주소 못찾을 때 직접 입력)" step="any">
+    <input type="number" id="lng" placeholder="경도 (주소 못찾을 때 직접 입력)" step="any">
     <input type="text" id="phone" placeholder="전화번호">
     <input type="text" id="items" placeholder="취급품목">
     <select id="type">
@@ -45,12 +47,20 @@
     <div id="upload-status"></div>
 
     <h3>판매점 목록</h3>
+    <div id="list-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <select id="sort-select">
+        <option value="created">등록순</option>
+        <option value="name">이름순</option>
+        <option value="type">종류순</option>
+      </select>
+    </div>
     <div id="list-filter">
       <button class="list-filter-btn active" data-type="all">전체</button>
       <button class="list-filter-btn" data-type="자판기">자판기</button>
       <button class="list-filter-btn" data-type="편의점">편의점</button>
       <button class="list-filter-btn" data-type="문방구">문방구</button>
       <button class="list-filter-btn" data-type="카드샵">카드샵</button>
+      <button class="list-filter-btn" data-type="중복">중복</button>
     </div>
     <div id="store-list"></div>
     <div id="pagination">
