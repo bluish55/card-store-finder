@@ -329,7 +329,17 @@ async function uploadCSV() {
 
   const text = await file.text();
   const lines = text.trim().split('\n');
-  const rows = lines.slice(1).map(line => line.split(',').map(v => v.trim()));
+  const rows = lines.slice(1).map(line => {
+    const cols = [];
+    let cur = '', inQuote = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuote = !inQuote; }
+      else if (ch === ',' && !inQuote) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
 
   const status = document.getElementById('upload-status');
   status.textContent = `총 ${rows.length}개 처리 중...`;
@@ -342,11 +352,47 @@ async function uploadCSV() {
     if (!name || !address) { fail++; failedItems.push(`${name || '이름없음'} (주소없음)`); continue; }
 
     try {
-      const res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
+      const simplifyAddress = addr => addr
+        .replace(/\(.*?\)/g, '')
+        .replace(/[0-9]+층/g, '')
+        .replace(/[A-Za-z0-9]+-[0-9]+호/g, '')
+        .replace(/[0-9]+호/g, '')
+        .replace(/[0-9]+동/g, '')
+        .replace(/,.*$/, '')
+        .trim();
+
+      let json;
+      const res1 = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
         headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
       });
-      const json = await res.json();
-      if (!json.documents.length) { fail++; failedItems.push(`${name} - 주소 못찾음`); continue; }
+      json = await res1.json();
+
+      if (!json.documents.length) {
+        const simplified = simplifyAddress(address);
+        const res2 = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(simplified)}`, {
+          headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
+        });
+        json = await res2.json();
+      }
+
+      if (!json.documents.length) {
+        const res3 = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(name)}&category_group_code=CS2`, {
+          headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
+        });
+        json = await res3.json();
+        if (!json.documents.length) { fail++; failedItems.push(`${name} - 주소 못찾음`); continue; }
+        const { x: lng, y: lat } = json.documents[0];
+        const { data: existing } = await db.from('stores').select('id').eq('name', name).eq('address', address).single();
+        if (existing) {
+          const { error: updateErr } = await db.from('stores').update({ name, phone, items, type, lat: parseFloat(lat), lng: parseFloat(lng) }).eq('id', existing.id);
+          if (updateErr) { fail++; failedItems.push(`${name} - 수정 실패: ${updateErr.message}`); continue; }
+        } else {
+          const { error: insertErr } = await db.from('stores').insert({ name, address, phone, items, type, lat: parseFloat(lat), lng: parseFloat(lng) });
+          if (insertErr) { fail++; failedItems.push(`${name} - 추가 실패: ${insertErr.message}`); continue; }
+        }
+        success++;
+        continue;
+      }
 
       const { x: lng, y: lat } = json.documents[0].address;
 
