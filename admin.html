@@ -46,6 +46,14 @@
     <button onclick="uploadCSV()">업로드</button>
     <div id="upload-status"></div>
 
+    <h3>판매처 제보</h3>
+    <div id="pending-list"></div>
+    <div id="pending-pagination">
+      <button id="pending-prev-btn" onclick="changePendingPage(-1)">이전</button>
+      <span id="pending-page-info"></span>
+      <button id="pending-next-btn" onclick="changePendingPage(1)">다음</button>
+    </div>
+
     <h3>판매점 목록</h3>
     <div id="list-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
       <select id="sort-select">

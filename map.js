@@ -195,6 +195,9 @@ function showPanel(store) {
   } else {
     distEl.textContent = '';
   }
+  document.querySelectorAll('.stock-btn').forEach(btn => btn.disabled = false);
+  document.getElementById('stock-report-list').innerHTML = '';
+  loadStockReports(store.id);
   document.getElementById('store-panel').classList.remove('hidden');
 }
 
@@ -381,4 +384,280 @@ window.addEventListener('load', () => {
       getCurrentLocation();
     }
   });
+
+  // 판매처 제보 버튼
+  document.getElementById('report-btn').addEventListener('click', openStoreReportModal);
+  document.getElementById('store-report-close').addEventListener('click', () => {
+    document.getElementById('store-report-modal').classList.add('hidden');
+  });
+
+  // 지도 picker
+  document.getElementById('map-picker-confirm').addEventListener('click', confirmMapPicker);
+  document.getElementById('map-picker-cancel').addEventListener('click', cancelMapPicker);
+
+  // 재고 제보 사진 모달
+  document.getElementById('stock-photo-close').addEventListener('click', () => {
+    document.getElementById('stock-photo-modal').classList.add('hidden');
+    pendingReportType = null;
+  });
+  document.getElementById('stock-photo-submit').addEventListener('click', () => {
+    const file = document.getElementById('stock-photo-input').files[0] || null;
+    doSubmitStockReport(file);
+  });
+  document.getElementById('stock-photo-skip').addEventListener('click', () => {
+    doSubmitStockReport(null);
+  });
 });
+
+// ── 재고 제보 ────────────────────────────────────────────
+
+function showToast(msg = '제보 완료!') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 2000);
+}
+
+function calcDistanceMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function calcTrustLevel(gpsVerified, hasPhoto) {
+  if (gpsVerified && hasPhoto) return '높음';
+  if (gpsVerified || hasPhoto) return '보통';
+  return '낮음';
+}
+
+const REPORT_WINDOW_MS = 16 * 60 * 60 * 1000;
+
+function getMyReport(storeId) {
+  const data = localStorage.getItem(`stock_report_${storeId}`);
+  if (!data) return null;
+  try { return JSON.parse(data); } catch { return null; }
+}
+
+function setMyReport(storeId, id) {
+  localStorage.setItem(`stock_report_${storeId}`, JSON.stringify({ id, time: Date.now() }));
+}
+
+async function loadStockReports(storeId) {
+  const { data } = await db.from('stock_reports')
+    .select('*')
+    .eq('store_id', storeId)
+    .order('created_at', { ascending: false })
+    .limit(3);
+  const el = document.getElementById('stock-report-list');
+  if (!data || !data.length) {
+    el.innerHTML = '<p class="no-report">아직 제보가 없어요</p>';
+    return;
+  }
+  el.innerHTML = data.map(r => {
+    const d = new Date(r.created_at);
+    const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const typeStr = r.report_type === 'available' ? '✅ 있어요' : r.report_type === 'low_stock' ? '⚠️ 마지막 몇 개' : '❌ 없어요';
+    return `<div class="stock-report-item">
+      <span class="report-type">${typeStr}</span>
+      <span class="report-time">${timeStr}</span>
+      <span class="report-trust trust-${r.trust_level}">${r.trust_level}</span>
+    </div>`;
+  }).join('');
+}
+
+let pendingReportType = null;
+
+function submitStockReport(reportType) {
+  if (!currentStore) return;
+  pendingReportType = reportType;
+  document.getElementById('stock-photo-input').value = '';
+  document.getElementById('stock-photo-modal').classList.remove('hidden');
+}
+
+async function doSubmitStockReport(photoFile) {
+  if (!currentStore || !pendingReportType) return;
+  const storeId = currentStore.id;
+
+  let gpsVerified = false;
+  if (userLat !== null && userLng !== null) {
+    gpsVerified = calcDistanceMeters(userLat, userLng, currentStore.lat, currentStore.lng) <= 300;
+  }
+
+  let photoUrl = null;
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `stock_${storeId}_${Date.now()}.${ext}`;
+    const { error: uploadError } = await db.storage.from('reports').upload(fileName, photoFile);
+    if (!uploadError) {
+      const { data: urlData } = db.storage.from('reports').getPublicUrl(fileName);
+      photoUrl = urlData.publicUrl;
+    }
+  }
+
+  const trustLevel = calcTrustLevel(gpsVerified, !!photoUrl);
+
+  // 16시간 이내 재제보면 내 이전 제보 삭제
+  const myPrev = getMyReport(storeId);
+  if (myPrev && Date.now() - myPrev.time < REPORT_WINDOW_MS) {
+    await db.from('stock_reports').delete().eq('id', myPrev.id);
+  }
+
+  const { data: inserted, error } = await db.from('stock_reports').insert({
+    store_id: storeId,
+    report_type: pendingReportType,
+    gps_verified: gpsVerified,
+    photo_url: photoUrl,
+    trust_level: trustLevel
+  }).select('id').single();
+
+  if (error) { alert('제보 실패: ' + error.message); return; }
+
+  setMyReport(storeId, inserted.id);
+
+  // 3개 초과 시 오래된 것 삭제
+  const { data: all } = await db.from('stock_reports')
+    .select('id')
+    .eq('store_id', storeId)
+    .order('created_at', { ascending: false });
+  if (all && all.length > 3) {
+    const toDelete = all.slice(3).map(r => r.id);
+    await db.from('stock_reports').delete().in('id', toDelete);
+  }
+
+  document.getElementById('stock-photo-modal').classList.add('hidden');
+  pendingReportType = null;
+  loadStockReports(storeId);
+  showToast();
+}
+
+// ── 판매처 제보 ───────────────────────────────────────────
+
+let reportLat = null;
+let reportLng = null;
+let reportAddress = null;
+let mapPickerMap = null;
+let pickerLat = null;
+let pickerLng = null;
+
+function openStoreReportModal() {
+  document.getElementById('store-report-modal').classList.remove('hidden');
+  document.getElementById('report-name').value = '';
+  document.getElementById('report-phone').value = '';
+  document.getElementById('report-items').value = '';
+  document.getElementById('report-photo').value = '';
+  reportLat = null;
+  reportLng = null;
+  reportAddress = null;
+  goReportStep(1);
+
+  const tryGPS = (lat, lng) => {
+    reportLat = lat;
+    reportLng = lng;
+    const geocoder = new kakao.maps.services.Geocoder();
+    geocoder.coord2Address(lng, lat, (result, status) => {
+      if (status === kakao.maps.services.Status.OK) {
+        reportAddress = result[0].road_address?.address_name || result[0].address.address_name;
+        document.getElementById('report-location-text').textContent = `📍 ${reportAddress}`;
+      }
+    });
+  };
+
+  if (userLat !== null && userLng !== null) {
+    tryGPS(userLat, userLng);
+  } else if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => tryGPS(pos.coords.latitude, pos.coords.longitude),
+      () => { document.getElementById('report-location-text').textContent = '지도에서 위치를 선택해주세요.'; }
+    );
+  } else {
+    document.getElementById('report-location-text').textContent = '지도에서 위치를 선택해주세요.';
+  }
+}
+
+function openMapPicker() {
+  document.getElementById('store-report-modal').classList.add('hidden');
+  document.getElementById('map-picker').classList.remove('hidden');
+
+  const initLat = reportLat || DEFAULT_LAT;
+  const initLng = reportLng || DEFAULT_LNG;
+
+  if (!mapPickerMap) {
+    mapPickerMap = new kakao.maps.Map(document.getElementById('map-picker-map'), {
+      center: new kakao.maps.LatLng(initLat, initLng),
+      level: 1
+    });
+    kakao.maps.event.addListener(mapPickerMap, 'dragend', updatePickerAddress);
+    kakao.maps.event.addListener(mapPickerMap, 'zoom_changed', updatePickerAddress);
+  } else {
+    mapPickerMap.setCenter(new kakao.maps.LatLng(initLat, initLng));
+    mapPickerMap.setLevel(1);
+    mapPickerMap.relayout();
+  }
+
+  updatePickerAddress();
+}
+
+function updatePickerAddress() {
+  const center = mapPickerMap.getCenter();
+  pickerLat = center.getLat();
+  pickerLng = center.getLng();
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.coord2Address(pickerLng, pickerLat, (result, status) => {
+    document.getElementById('map-picker-address').textContent =
+      status === kakao.maps.services.Status.OK
+        ? (result[0].road_address?.address_name || result[0].address.address_name)
+        : '주소를 가져올 수 없습니다';
+  });
+}
+
+function confirmMapPicker() {
+  reportLat = pickerLat;
+  reportLng = pickerLng;
+  reportAddress = document.getElementById('map-picker-address').textContent;
+  document.getElementById('report-location-text').textContent = `📍 ${reportAddress}`;
+  document.getElementById('map-picker').classList.add('hidden');
+  document.getElementById('store-report-modal').classList.remove('hidden');
+}
+
+function cancelMapPicker() {
+  document.getElementById('map-picker').classList.add('hidden');
+  document.getElementById('store-report-modal').classList.remove('hidden');
+}
+
+function goReportStep(step) {
+  [1, 2, 3].forEach(s => {
+    document.getElementById(`report-step-${s}`).classList.toggle('hidden', s !== step);
+  });
+}
+
+async function submitStoreReport() {
+  const name = document.getElementById('report-name').value.trim();
+  const type = document.getElementById('report-type').value;
+  const phone = document.getElementById('report-phone').value.trim();
+  const items = document.getElementById('report-items').value.trim();
+  const photoFile = document.getElementById('report-photo').files[0];
+
+  if (!name) return alert('상호명을 입력해주세요.');
+  if (!reportLat || !reportLng) return alert('지도에서 위치를 선택해주세요.');
+
+  const lat = reportLat, lng = reportLng, address = reportAddress || '';
+
+  let photoUrl = null;
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `store_${Date.now()}.${ext}`;
+    const { error: uploadError } = await db.storage.from('reports').upload(fileName, photoFile);
+    if (!uploadError) {
+      const { data: urlData } = db.storage.from('reports').getPublicUrl(fileName);
+      photoUrl = urlData.publicUrl;
+    }
+  }
+
+  const { error } = await db.from('pending_stores').insert({ name, address, lat, lng, phone, items, type, photo_url: photoUrl });
+  if (error) return alert('제보 실패: ' + error.message);
+
+  document.getElementById('store-report-modal').classList.add('hidden');
+  showToast('제보해주셔서 감사합니다!');
+}

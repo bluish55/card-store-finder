@@ -54,6 +54,74 @@
 
   <button id="location-btn">🏠</button>
   <button id="list-btn">리스트로 보기</button>
+  <button id="report-btn">+ 제보</button>
+
+  <!-- 재고 제보 사진 모달 -->
+  <div id="stock-photo-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button id="stock-photo-close" class="modal-close-btn">✕</button>
+      <h3>사진으로 신뢰도를 높여보세요</h3>
+      <p class="modal-sub">영수증이나 진열대 사진을 첨부하면<br>신뢰도가 올라가요!</p>
+      <input type="file" id="stock-photo-input" accept="image/*">
+      <button id="stock-photo-submit">제보하기</button>
+      <button id="stock-photo-skip" class="btn-secondary">사진 없이 제보</button>
+    </div>
+  </div>
+
+  <!-- 판매처 제보 모달 -->
+  <!-- 지도 위치 선택 picker -->
+  <div id="map-picker" class="hidden">
+    <div id="map-picker-map">
+      <div id="map-picker-pin">📍</div>
+    </div>
+    <div id="map-picker-bottom">
+      <p id="map-picker-address">위치를 선택해주세요</p>
+      <div class="modal-btn-row">
+        <button id="map-picker-cancel" class="btn-secondary">취소</button>
+        <button id="map-picker-confirm">여기로 설정</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="store-report-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button id="store-report-close" class="modal-close-btn">✕</button>
+      <div id="report-step-1">
+        <h3>판매처 제보</h3>
+        <p class="modal-sub">Step 1 / 3 — 위치 확인</p>
+        <p id="report-location-text">위치를 가져오는 중...</p>
+        <button onclick="openMapPicker()" class="btn-secondary">🗺 지도에서 선택</button>
+        <button onclick="goReportStep(2)">다음</button>
+      </div>
+      <div id="report-step-2" class="hidden">
+        <h3>판매처 제보</h3>
+        <p class="modal-sub">Step 2 / 3 — 정보 입력</p>
+        <input type="text" id="report-name" placeholder="상호명">
+        <select id="report-type">
+          <option value="자판기">자판기</option>
+          <option value="편의점">편의점</option>
+          <option value="문방구">문방구</option>
+          <option value="카드샵">카드샵</option>
+        </select>
+        <input type="text" id="report-phone" placeholder="전화번호 (선택)">
+        <input type="text" id="report-items" placeholder="취급품목 (선택)">
+        <div class="modal-btn-row">
+          <button onclick="goReportStep(1)" class="btn-secondary">이전</button>
+          <button onclick="goReportStep(3)">다음</button>
+        </div>
+      </div>
+      <div id="report-step-3" class="hidden">
+        <h3>판매처 제보</h3>
+        <p class="modal-sub">Step 3 / 3 — 사진 첨부 (선택)</p>
+        <p class="modal-hint">사진을 올리면 신뢰도가 올라가요!</p>
+        <input type="file" id="report-photo" accept="image/*">
+        <div class="modal-btn-row">
+          <button onclick="goReportStep(2)" class="btn-secondary">이전</button>
+          <button onclick="submitStoreReport()">제보하기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="store-panel" class="hidden">
     <div id="panel-handle"></div>
@@ -70,7 +138,17 @@
     <p id="store-phone"><span class="phone-icon">📞</span><span id="store-phone-text"></span></p>
     <p id="store-items"></p>
     <a id="navi-btn" target="_blank" rel="noopener">길찾기</a>
+    <div id="stock-report-section">
+      <div id="stock-report-btns">
+        <button class="stock-btn in-stock-btn" onclick="submitStockReport('available')">✅ 있어요</button>
+        <button class="stock-btn low-stock-btn" onclick="submitStockReport('low_stock')">⚠️ 마지막 몇 개</button>
+        <button class="stock-btn out-stock-btn" onclick="submitStockReport('out_of_stock')">❌ 없어요</button>
+      </div>
+      <div id="stock-report-list"></div>
+    </div>
   </div>
+
+  <div id="toast" class="hidden">제보 완료!</div>
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

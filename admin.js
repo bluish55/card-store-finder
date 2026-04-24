@@ -45,6 +45,7 @@ async function login() {
   document.getElementById('menu-btn').classList.remove('hidden');
   document.getElementById('menu-email').textContent = email;
   loadStoreList();
+  loadPendingStores();
 }
 
 async function logout() {
@@ -228,6 +229,98 @@ async function deleteStore(id) {
   if (!confirm('삭제할까요?')) return;
   await db.from('stores').delete().eq('id', id);
   loadStoreList();
+}
+
+// ── 판매처 제보 ───────────────────────────────────────────
+
+let pendingData = [];
+let pendingPage = 1;
+const PENDING_PAGE_SIZE = 3;
+
+async function loadPendingStores() {
+  const { data } = await db.from('pending_stores').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  pendingData = data || [];
+  pendingPage = 1;
+  renderPendingList();
+}
+
+function renderPendingList() {
+  const totalPages = Math.max(1, Math.ceil(pendingData.length / PENDING_PAGE_SIZE));
+  if (pendingPage > totalPages) pendingPage = totalPages;
+  const pageData = pendingData.slice((pendingPage - 1) * PENDING_PAGE_SIZE, pendingPage * PENDING_PAGE_SIZE);
+
+  document.getElementById('pending-list').innerHTML = !pendingData.length
+    ? '<p style="color:#666;font-size:14px;">제보 없음</p>'
+    : pageData.map(s => `
+      <div id="pending-card-${s.id}" style="border:1px solid #ddd;padding:12px;border-radius:8px;margin-bottom:8px;">
+        <strong>${s.name}</strong> (${s.type})<br>
+        ${s.address}<br>
+        ${s.phone ? s.phone + '<br>' : ''}
+        ${s.items ? s.items + '<br>' : ''}
+        ${s.photo_url ? `<a href="${s.photo_url}" target="_blank" style="font-size:12px;color:#1565c0;">사진 보기</a><br>` : ''}
+        <small style="color:#999;">${new Date(s.created_at).toLocaleDateString('ko-KR')}</small><br>
+        <button onclick="approvePendingStore(${s.id})" style="background:#43a047;">승인</button>
+        <button onclick="rejectPendingStore(${s.id})">거절</button>
+      </div>
+    `).join('');
+
+  document.getElementById('pending-page-info').textContent = `${pendingPage} / ${totalPages} (${pendingData.length}개)`;
+  document.getElementById('pending-prev-btn').disabled = pendingPage <= 1;
+  document.getElementById('pending-next-btn').disabled = pendingPage >= totalPages;
+}
+
+function changePendingPage(dir) {
+  pendingPage += dir;
+  renderPendingList();
+}
+
+function approvePendingStore(id) {
+  const s = pendingData.find(s => s.id === id);
+  if (!s) return;
+  const card = document.getElementById(`pending-card-${s.id}`);
+  card.innerHTML = `
+    <input type="text" id="ap-name-${s.id}" value="${s.name}" placeholder="상호명"><br>
+    <input type="text" id="ap-address-${s.id}" value="${s.address}" placeholder="주소"><br>
+    <input type="number" id="ap-lat-${s.id}" value="${s.lat}" placeholder="위도" step="any">
+    <input type="number" id="ap-lng-${s.id}" value="${s.lng}" placeholder="경도" step="any"><br>
+    <input type="text" id="ap-phone-${s.id}" value="${s.phone || ''}" placeholder="전화번호"><br>
+    <input type="text" id="ap-items-${s.id}" value="${s.items || ''}" placeholder="취급품목"><br>
+    <select id="ap-type-${s.id}">
+      <option value="자판기" ${s.type === '자판기' ? 'selected' : ''}>자판기</option>
+      <option value="편의점" ${s.type === '편의점' ? 'selected' : ''}>편의점</option>
+      <option value="문방구" ${s.type === '문방구' ? 'selected' : ''}>문방구</option>
+      <option value="카드샵" ${s.type === '카드샵' ? 'selected' : ''}>카드샵</option>
+    </select><br>
+    ${s.photo_url ? `<a href="${s.photo_url}" target="_blank" style="font-size:12px;color:#1565c0;">사진 보기</a><br>` : ''}
+    <button onclick="confirmApprove(${s.id})" style="background:#43a047;">승인 확정</button>
+    <button onclick="renderPendingList()">취소</button>
+  `;
+}
+
+async function confirmApprove(id) {
+  const name = document.getElementById(`ap-name-${id}`).value.trim();
+  const address = document.getElementById(`ap-address-${id}`).value.trim();
+  const lat = parseFloat(document.getElementById(`ap-lat-${id}`).value);
+  const lng = parseFloat(document.getElementById(`ap-lng-${id}`).value);
+  const phone = document.getElementById(`ap-phone-${id}`).value.trim();
+  const items = document.getElementById(`ap-items-${id}`).value.trim();
+  const type = document.getElementById(`ap-type-${id}`).value;
+
+  if (!name) return alert('상호명을 입력해주세요.');
+  if (isNaN(lat) || isNaN(lng)) return alert('위도/경도를 확인해주세요.');
+
+  const { error } = await db.from('stores').insert({ name, address, lat, lng, phone, items, type });
+  if (error) return alert('승인 실패: ' + error.message);
+  await db.from('pending_stores').update({ status: 'approved' }).eq('id', id);
+  alert('승인 완료!');
+  loadPendingStores();
+  loadStoreList();
+}
+
+async function rejectPendingStore(id) {
+  if (!confirm('제보를 거절하시겠습니까?')) return;
+  await db.from('pending_stores').update({ status: 'rejected' }).eq('id', id);
+  loadPendingStores();
 }
 
 async function uploadCSV() {
