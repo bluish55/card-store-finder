@@ -550,6 +550,7 @@ function openStoreReportModal() {
   reportLat = null;
   reportLng = null;
   reportAddress = null;
+  document.getElementById('report-step1-next').classList.add('btn-inactive');
   goReportStep(1);
 
   const tryGPS = (lat, lng) => {
@@ -617,6 +618,7 @@ function confirmMapPicker() {
   reportLng = pickerLng;
   reportAddress = document.getElementById('map-picker-address').textContent;
   document.getElementById('report-location-text').textContent = `📍 ${reportAddress}`;
+  document.getElementById('report-step1-next').classList.remove('btn-inactive');
   document.getElementById('map-picker').classList.add('hidden');
   document.getElementById('store-report-modal').classList.remove('hidden');
 }
@@ -624,6 +626,14 @@ function confirmMapPicker() {
 function cancelMapPicker() {
   document.getElementById('map-picker').classList.add('hidden');
   document.getElementById('store-report-modal').classList.remove('hidden');
+}
+
+function handleReportNext() {
+  if (document.getElementById('report-step1-next').classList.contains('btn-inactive')) {
+    openMapPicker();
+  } else {
+    goReportStep(2);
+  }
 }
 
 function goReportStep(step) {

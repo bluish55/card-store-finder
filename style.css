@@ -398,6 +398,11 @@ body {
   color: #666;
 }
 
+.btn-inactive {
+  background: #ddd;
+  color: #aaa;
+}
+
 /* 위치 차단 배너 */
 #location-denied-banner {
   position: fixed;
