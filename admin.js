@@ -60,9 +60,7 @@ async function addStore() {
 
   let lat, lng;
 
-  const res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-    headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
-  });
+  const res = await fetch(`/api/geocode?query=${encodeURIComponent(address)}`);
   const json = await res.json();
 
   if (json.documents.length) {
@@ -203,9 +201,7 @@ async function saveStore(id) {
   let lat = manualLat, lng = manualLng;
 
   if (address !== s.address) {
-    const res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-      headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
-    });
+    const res = await fetch(`/api/geocode?query=${encodeURIComponent(address)}`);
     const json = await res.json();
     if (json.documents.length) {
       lat = parseFloat(json.documents[0].address.y);
@@ -362,23 +358,17 @@ async function uploadCSV() {
         .trim();
 
       let json;
-      const res1 = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-        headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
-      });
+      const res1 = await fetch(`/api/geocode?query=${encodeURIComponent(address)}`);
       json = await res1.json();
 
       if (!json.documents.length) {
         const simplified = simplifyAddress(address);
-        const res2 = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(simplified)}`, {
-          headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
-        });
+        const res2 = await fetch(`/api/geocode?query=${encodeURIComponent(simplified)}`);
         json = await res2.json();
       }
 
       if (!json.documents.length) {
-        const res3 = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(name)}&category_group_code=CS2`, {
-          headers: { 'Authorization': `KakaoAK ${CONFIG.kakao.restKey}` }
-        });
+        const res3 = await fetch(`/api/keyword?query=${encodeURIComponent(name)}&category_group_code=CS2`);
         json = await res3.json();
         if (!json.documents.length) { fail++; failedItems.push(`${name} - 주소 못찾음`); continue; }
         const { x: lng, y: lat } = json.documents[0];

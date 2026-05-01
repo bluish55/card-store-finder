@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>포켓몬카드 판매점 지도</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e53935">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="포켓몬카드">
+  <link rel="apple-touch-icon" href="icons/vending.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -154,5 +160,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cf6b8c5a31ab27835ad75b58e202f3ea&libraries=services"></script>
   <script src="map.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  </script>
 </body>
 </html>

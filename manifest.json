@@ -1,0 +1,24 @@
+{
+  "name": "포켓몬카드 판매점 지도",
+  "short_name": "포켓몬카드",
+  "description": "주변 포켓몬카드 판매점을 찾아보세요",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e53935",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/vending.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/vending.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
