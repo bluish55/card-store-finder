@@ -363,14 +363,10 @@ function backFromPresetEdit() {
 }
 
 function backFromRuleEdit() {
-  if (getRuleFormSnapshot() !== ruleFormSnapshot) {
-    showUnsavedModal(
-      () => saveRule(),
-      () => closeRuleEdit()
-    );
-    return;
-  }
-  closeRuleEdit();
+  showUnsavedModal(
+    () => saveRule(),
+    () => closeRuleEdit()
+  );
 }
 
 function closeRuleEdit() {
