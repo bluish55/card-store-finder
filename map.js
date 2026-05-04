@@ -29,37 +29,46 @@ function toggleFavorite(id) {
 const DEFAULT_LAT = 37.5447;
 const DEFAULT_LNG = 127.0558;
 
-function getPinColorConfig() {
-  const saved = localStorage.getItem('pinColorConfig');
-  if (saved) try { return JSON.parse(saved); } catch {}
-  return {
-    availableMaxHours: 24,
-    expiredHours: 72,
-    lowStockMaxHours: 24,
-    colors: {
-      available: '#43a047',
-      low_stock: '#fb8c00',
-      out_of_stock: '#e53935',
-      expired: '#e53935',
-      no_report: '#1e88e5'
-    }
-  };
+function getActivePinRules() {
+  try {
+    const data = JSON.parse(localStorage.getItem('pinPresets'));
+    if (!data) return null;
+    const preset = data.presets.find(p => p.id === data.activeId);
+    return preset?.rules || null;
+  } catch { return null; }
 }
 
-function getPinColor(latestReport) {
-  const cfg = getPinColorConfig();
-  if (!latestReport) return cfg.colors.no_report;
+function matchesCondition(condition, latestReport, isFav) {
+  if (condition.favoriteOnly && !isFav) return false;
+  const reportType = latestReport ? latestReport.report_type : 'no_report';
+  if (condition.reportType !== 'any' && condition.reportType !== reportType) return false;
+  if (condition.timeType === 'none' || !latestReport) return condition.timeType === 'none';
   const hoursSince = (Date.now() - new Date(latestReport.created_at).getTime()) / 3600000;
-  if (latestReport.report_type === 'out_of_stock') return cfg.colors.out_of_stock;
-  if (latestReport.report_type === 'low_stock') {
-    return hoursSince <= cfg.lowStockMaxHours ? cfg.colors.low_stock : cfg.colors.expired;
+  if (condition.timeType === 'max') return hoursSince <= condition.maxHours;
+  if (condition.timeType === 'min') return hoursSince > condition.minHours;
+  if (condition.timeType === 'range') return hoursSince >= condition.minHours && hoursSince <= condition.maxHours;
+  return true;
+}
+
+function getPinColor(latestReport, storeId) {
+  const fav = isFavorite(storeId);
+  const rules = getActivePinRules();
+  if (rules) {
+    for (const rule of rules) {
+      if (matchesCondition(rule.condition, latestReport, fav)) return rule.pin;
+    }
   }
+  // fallback defaults
+  if (!latestReport) return { type: 'color', value: '#1e88e5' };
+  const hoursSince = (Date.now() - new Date(latestReport.created_at).getTime()) / 3600000;
+  if (latestReport.report_type === 'out_of_stock') return { type: 'color', value: '#e53935' };
+  if (latestReport.report_type === 'low_stock') return { type: 'color', value: hoursSince <= 24 ? '#fb8c00' : '#e53935' };
   if (latestReport.report_type === 'available') {
-    if (hoursSince <= cfg.availableMaxHours) return cfg.colors.available;
-    if (hoursSince <= cfg.expiredHours) return cfg.colors.low_stock;
-    return cfg.colors.expired;
+    if (hoursSince <= 24) return { type: 'color', value: '#43a047' };
+    if (hoursSince <= 72) return { type: 'color', value: '#fb8c00' };
+    return { type: 'color', value: '#e53935' };
   }
-  return cfg.colors.no_report;
+  return { type: 'color', value: '#1e88e5' };
 }
 
 function getLocationPref() {
@@ -174,9 +183,17 @@ async function loadStores() {
   renderMarkers(allStores);
 }
 
-function createPinElement(color, size) {
+function createPinElement(pin, size) {
   const el = document.createElement('div');
-  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);cursor:pointer;`;
+  if (pin.type === 'image') {
+    el.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;`;
+    const img = document.createElement('img');
+    img.src = pin.value;
+    img.style.cssText = `width:100%;height:100%;object-fit:contain;`;
+    el.appendChild(img);
+  } else {
+    el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${pin.value};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);cursor:pointer;`;
+  }
   return el;
 }
 
@@ -191,8 +208,8 @@ function renderMarkers(stores) {
   const size = getPinSize();
 
   stores.forEach(store => {
-    const color = getPinColor(stockReportMap[store.id]);
-    const el = createPinElement(color, size);
+    const pin = getPinColor(stockReportMap[store.id], store.id);
+    const el = createPinElement(pin, size);
     markerElements.push(el);
     renderedStores.push(store);
 
@@ -345,7 +362,7 @@ window.addEventListener('load', () => {
   initMap();
 
   // 지도 위 UI 요소 터치 시 지도 이동 방지
-  ['#top-row', '#store-panel', '#location-btn', '#location-popup', '#location-denied-banner', '#bottom-nav', '#list-view', '#settings-view'].forEach(sel => {
+  ['#top-row', '#store-panel', '#location-btn', '#location-popup', '#location-denied-banner', '#bottom-nav', '#list-view'].forEach(sel => {
     const el = document.querySelector(sel);
     if (!el) return;
     el.addEventListener('touchstart', e => e.stopPropagation());
@@ -361,15 +378,6 @@ window.addEventListener('load', () => {
 
   document.getElementById('search-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') searchLocation();
-  });
-
-  // 위치 토글
-  document.getElementById('location-toggle').addEventListener('change', (e) => {
-    setLocationPref(e.target.checked);
-    if (e.target.checked) {
-      document.getElementById('location-denied-banner').classList.add('hidden');
-      getCurrentLocation();
-    }
   });
 
   // 위치 팝업 버튼
@@ -429,6 +437,14 @@ document.getElementById('fav-btn').addEventListener('click', () => {
   document.getElementById('map-picker-confirm').addEventListener('click', confirmMapPicker);
   document.getElementById('map-picker-cancel').addEventListener('click', cancelMapPicker);
 
+  // 설정에서 돌아올 때 핀 재렌더
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && allStores.length) {
+      const stores = renderedStores.length ? [...renderedStores] : allStores;
+      renderMarkers(stores);
+    }
+  });
+
   // 재고 제보 사진 모달
   document.getElementById('stock-photo-close').addEventListener('click', () => {
     document.getElementById('stock-photo-modal').classList.add('hidden');
@@ -460,6 +476,11 @@ function formatDistance(dist) {
 let listSortMode = 'distance';
 
 function switchTab(tabName) {
+  if (tabName === 'settings') {
+    window.location.href = 'settings.html';
+    return;
+  }
+
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
@@ -471,7 +492,6 @@ function switchTab(tabName) {
   document.getElementById('top-row').classList.toggle('hidden', !isMap);
   document.getElementById('location-btn').classList.toggle('hidden', !isMap);
   document.getElementById('list-view').classList.toggle('hidden', tabName !== 'list');
-  document.getElementById('settings-view').classList.toggle('hidden', tabName !== 'settings');
 
   if (tabName === 'list') renderListView();
   if (isMap && map) map.relayout();
@@ -668,7 +688,13 @@ async function doSubmitStockReport(photoFile) {
   stockReportMap[storeId] = { store_id: storeId, report_type: pendingReportType, created_at: new Date().toISOString() };
   const pinIdx = renderedStores.findIndex(s => s.id === storeId);
   if (pinIdx !== -1 && markerElements[pinIdx]) {
-    markerElements[pinIdx].style.background = getPinColor(stockReportMap[storeId]);
+    const pin = getPinColor(stockReportMap[storeId], storeId);
+    if (pin.type === 'image') {
+      const img = markerElements[pinIdx].querySelector('img');
+      if (img) img.src = pin.value;
+    } else {
+      markerElements[pinIdx].style.background = pin.value;
+    }
   }
 
   // 3개 초과 시 오래된 것 삭제

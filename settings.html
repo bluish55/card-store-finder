@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>설정</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e53935">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+
+  <!-- View 1: 설정 메인 -->
+  <div id="main-view">
+    <div class="page-header">
+      <button class="back-btn" onclick="history.back()">←</button>
+      <h1>설정</h1>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">위치</div>
+      <div class="settings-item">
+        <span>내 위치 사용</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="location-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-header">
+        <div class="section-title">핀 프리셋</div>
+        <button id="add-preset-btn">+ 추가</button>
+      </div>
+      <div id="preset-list"></div>
+    </div>
+  </div>
+
+  <!-- View 2: 프리셋 편집 -->
+  <div id="preset-edit-view" class="hidden">
+    <div class="page-header">
+      <button class="back-btn" onclick="showMainView()">←</button>
+      <input type="text" id="preset-name-input" placeholder="프리셋 이름">
+      <button onclick="savePresetName()">저장</button>
+    </div>
+    <p class="info-text">규칙은 위→아래 순서로 적용됩니다. 첫 번째로 일치하는 규칙의 핀이 표시됩니다.</p>
+    <div id="rule-list"></div>
+    <div class="add-btn-wrap">
+      <button id="add-rule-btn" onclick="openRuleEdit(null)">+ 규칙 추가</button>
+    </div>
+  </div>
+
+  <!-- View 3: 규칙 편집 -->
+  <div id="rule-edit-view" class="hidden">
+    <div class="page-header">
+      <button class="back-btn" onclick="closeRuleEdit()">←</button>
+      <h1>규칙 설정</h1>
+      <button onclick="saveRule()">저장</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">조건</div>
+      <div class="rule-field">
+        <label>제보 상태</label>
+        <select id="rule-report-type">
+          <option value="any">모두</option>
+          <option value="available">있어요</option>
+          <option value="low_stock">마지막 몇 개</option>
+          <option value="out_of_stock">없어요</option>
+          <option value="no_report">제보 없음</option>
+        </select>
+      </div>
+      <div class="rule-field">
+        <label>시간 조건</label>
+        <select id="rule-time-type" onchange="updateTimeInputs()">
+          <option value="none">없음</option>
+          <option value="max">X시간 이내</option>
+          <option value="range">X ~ Y시간</option>
+          <option value="min">X시간 초과</option>
+        </select>
+      </div>
+      <div id="time-inputs" class="hidden">
+        <div class="rule-field time-row">
+          <input type="number" id="rule-min-hours" placeholder="시작" min="0" class="hidden">
+          <span id="time-separator" class="hidden">~</span>
+          <input type="number" id="rule-max-hours" placeholder="시간" min="0">
+          <span class="time-unit">시간</span>
+        </div>
+      </div>
+      <div class="rule-field">
+        <label>찜한 가게만</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="rule-favorite-only">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">핀</div>
+      <div class="rule-field">
+        <label>핀 종류</label>
+        <div class="pin-type-toggle">
+          <button class="pin-type-btn active" data-type="color" onclick="setPinType('color')">색깔</button>
+          <button class="pin-type-btn" data-type="image" onclick="setPinType('image')">이미지</button>
+        </div>
+      </div>
+      <div id="pin-color-field" class="rule-field">
+        <label>색상</label>
+        <input type="color" id="rule-pin-color" value="#43a047">
+      </div>
+      <div id="pin-image-field" class="rule-field hidden">
+        <label>이미지</label>
+        <div class="pin-image-wrap">
+          <div id="pin-image-preview"></div>
+          <input type="file" id="rule-pin-image" accept="image/*" onchange="previewPinImage(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
