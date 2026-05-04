@@ -12,8 +12,8 @@ body {
 
 #map {
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
 }
 
 #top-row {
@@ -66,7 +66,7 @@ body {
 
 #store-panel {
   position: fixed;
-  bottom: 0;
+  bottom: 56px;
   left: 0;
   right: 0;
   height: auto;
@@ -160,45 +160,6 @@ body {
   display: none !important;
 }
 
-/* 햄버거 메뉴 */
-#menu-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: white;
-  color: black;
-  font-size: 18px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  flex-shrink: 0;
-  padding: 0;
-}
-
-#menu-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-}
-
-#side-menu {
-  position: fixed;
-  top: 60px;
-  right: 16px;
-  width: 200px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 300;
-}
-
-#menu-email {
-  font-size: 14px;
-  color: #666;
-  word-break: break-all;
-}
 
 /* 검색 버튼 */
 #search-btn {
@@ -335,7 +296,7 @@ body {
 /* 내 위치 버튼 */
 #location-btn {
   position: fixed;
-  bottom: 24px;
+  bottom: 72px;
   left: 16px;
   width: 40px;
   height: 40px;
@@ -348,22 +309,6 @@ body {
   padding: 0;
 }
 
-/* 목록 버튼 */
-#list-btn {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 20px;
-  border-radius: 20px;
-  background: white;
-  color: black;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  z-index: 100;
-  white-space: nowrap;
-}
 
 /* 위치 권한 팝업 */
 #location-popup {
@@ -406,7 +351,7 @@ body {
 /* 위치 차단 배너 */
 #location-denied-banner {
   position: fixed;
-  bottom: 0;
+  bottom: 56px;
   left: 0;
   right: 0;
   background: #333;
@@ -606,21 +551,6 @@ button {
   padding: 8px 0;
 }
 
-/* + 제보 버튼 */
-#report-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 16px;
-  padding: 10px 16px;
-  border-radius: 20px;
-  background: #e53935;
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  z-index: 100;
-  white-space: nowrap;
-}
 
 /* 모달 공통 */
 .modal-overlay {
@@ -676,4 +606,130 @@ button {
 
 .modal-btn-row button {
   flex: 1;
+}
+
+/* 하단 네비게이션 */
+#bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  z-index: 120;
+}
+
+.nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: #aaa;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.nav-btn.active {
+  color: #e53935;
+  font-weight: bold;
+}
+
+/* 탭 뷰 공통 */
+.tab-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 56px;
+  background: #f8f8f8;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+/* 리스트 탭 */
+#list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  font-size: 15px;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+#list-sort-btn {
+  background: none;
+  color: #666;
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+#list-content {
+  padding: 8px;
+}
+
+.list-store-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.list-store-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.list-store-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+}
+
+.list-store-dist {
+  font-size: 13px;
+  color: #888;
+}
+
+.list-store-type {
+  font-size: 12px;
+  color: #e53935;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.list-store-address {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+.list-empty {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  padding: 60px 16px;
+  line-height: 1.8;
+}
+
+/* 설정 탭 */
+#settings-content {
+  padding: 16px;
+  background: white;
+  margin: 16px;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }

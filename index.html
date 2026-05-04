@@ -25,7 +25,6 @@
       <button class="filter-btn" data-type="편의점">편의점</button>
       <button class="filter-btn" data-type="문방구">문방구</button>
     </div>
-    <button id="menu-btn">☰</button>
     <div id="search-bar" class="hidden">
       <input type="text" id="search-input" placeholder="가게명 또는 지역명 입력">
       <button id="search-close">✕</button>
@@ -34,18 +33,7 @@
   <div id="search-dropdown" class="hidden"></div>
 
 
-  <div id="menu-overlay" class="hidden"></div>
-  <div id="side-menu" class="hidden">
-    <div id="location-menu-item">
-      <span>내 위치 사용</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="location-toggle">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-  </div>
-
-  <div id="location-popup" class="hidden">
+<div id="location-popup" class="hidden">
     <div id="location-popup-box">
       <p>내 주변 판매점을 찾으려면<br>위치 권한이 필요합니다</p>
       <button id="popup-allow-btn">위치 허용하기</button>
@@ -59,8 +47,6 @@
   </div>
 
   <button id="location-btn">🏠</button>
-  <button id="list-btn">리스트로 보기</button>
-  <button id="report-btn">+ 제보</button>
 
   <!-- 재고 제보 사진 모달 -->
   <div id="stock-photo-modal" class="modal-overlay hidden">
@@ -155,6 +141,36 @@
   </div>
 
   <div id="toast" class="hidden">제보 완료!</div>
+
+  <!-- 리스트 탭 -->
+  <div id="list-view" class="tab-view hidden">
+    <div id="list-header">
+      <span id="list-title">주변 판매점</span>
+      <button id="list-sort-btn">📍</button>
+    </div>
+    <div id="list-content"></div>
+  </div>
+
+  <!-- 설정 탭 -->
+  <div id="settings-view" class="tab-view hidden">
+    <div id="settings-content">
+      <div id="location-menu-item">
+        <span>내 위치 사용</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="location-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 네비게이션 -->
+  <nav id="bottom-nav">
+    <button class="nav-btn" data-tab="list">리스트</button>
+    <button class="nav-btn active" data-tab="map">지도</button>
+    <button class="nav-btn" data-tab="report">제보</button>
+    <button class="nav-btn" data-tab="settings">설정</button>
+  </nav>
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

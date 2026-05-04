@@ -218,7 +218,6 @@ function openSearch() {
   document.getElementById('search-bar').classList.remove('hidden');
   document.getElementById('search-btn').classList.add('hidden');
   document.getElementById('filter-bar').classList.add('hidden');
-  document.getElementById('menu-btn').classList.add('hidden');
   document.getElementById('search-input').focus();
 }
 
@@ -227,7 +226,6 @@ function closeSearch() {
   document.getElementById('search-dropdown').classList.add('hidden');
   document.getElementById('search-btn').classList.remove('hidden');
   document.getElementById('filter-bar').classList.remove('hidden');
-  document.getElementById('menu-btn').classList.remove('hidden');
   document.getElementById('search-input').value = '';
 }
 
@@ -304,7 +302,7 @@ window.addEventListener('load', () => {
   initMap();
 
   // 지도 위 UI 요소 터치 시 지도 이동 방지
-  ['#top-row', '#store-panel', '#list-btn', '#location-btn', '#side-menu', '#location-popup', '#location-denied-banner'].forEach(sel => {
+  ['#top-row', '#store-panel', '#location-btn', '#location-popup', '#location-denied-banner', '#bottom-nav', '#list-view', '#settings-view'].forEach(sel => {
     const el = document.querySelector(sel);
     if (!el) return;
     el.addEventListener('touchstart', e => e.stopPropagation());
@@ -320,17 +318,6 @@ window.addEventListener('load', () => {
 
   document.getElementById('search-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') searchLocation();
-  });
-
-  // 햄버거 메뉴
-  document.getElementById('menu-btn').addEventListener('click', () => {
-    document.getElementById('menu-overlay').classList.remove('hidden');
-    document.getElementById('side-menu').classList.remove('hidden');
-  });
-
-  document.getElementById('menu-overlay').addEventListener('click', () => {
-    document.getElementById('menu-overlay').classList.add('hidden');
-    document.getElementById('side-menu').classList.add('hidden');
   });
 
   // 위치 토글
@@ -355,19 +342,7 @@ window.addEventListener('load', () => {
     updateToggleUI();
   });
 
-  document.getElementById('list-btn').addEventListener('click', () => {
-    const bounds = map.getBounds();
-    const visible = renderedStores.filter((s, i) =>
-      markers[i] && markers[i].getMap() !== null &&
-      bounds.contain(new kakao.maps.LatLng(s.lat, s.lng))
-    );
-    localStorage.setItem('listStores', JSON.stringify(visible));
-    localStorage.setItem('listUserLat', userLat !== null ? String(userLat) : '');
-    localStorage.setItem('listUserLng', userLng !== null ? String(userLng) : '');
-    window.location.href = 'list.html';
-  });
-
-  document.getElementById('fav-btn').addEventListener('click', () => {
+document.getElementById('fav-btn').addEventListener('click', () => {
     if (!currentStore) return;
     toggleFavorite(currentStore.id);
     updateFavBtn(currentStore.id);
@@ -385,8 +360,23 @@ window.addEventListener('load', () => {
     }
   });
 
-  // 판매처 제보 버튼
-  document.getElementById('report-btn').addEventListener('click', openStoreReportModal);
+  // 하단 네비게이션
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'report') {
+        openStoreReportModal();
+        return;
+      }
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  // 리스트 정렬
+  document.getElementById('list-sort-btn').addEventListener('click', () => {
+    listSortMode = listSortMode === 'distance' ? 'alpha' : 'distance';
+    document.getElementById('list-sort-btn').textContent = listSortMode === 'distance' ? '📍' : '가나다';
+    renderListView();
+  });
   document.getElementById('store-report-close').addEventListener('click', () => {
     document.getElementById('store-report-modal').classList.add('hidden');
   });
@@ -408,6 +398,82 @@ window.addEventListener('load', () => {
     doSubmitStockReport(null);
   });
 });
+
+// ── 탭 네비게이션 ─────────────────────────────────────────
+
+function calcDistanceNum(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDistance(dist) {
+  return dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+}
+
+let listSortMode = 'distance';
+
+function switchTab(tabName) {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+
+  const isMap = tabName === 'map';
+  document.getElementById('top-row').classList.toggle('hidden', !isMap);
+  document.getElementById('location-btn').classList.toggle('hidden', !isMap);
+  document.getElementById('list-view').classList.toggle('hidden', tabName !== 'list');
+  document.getElementById('settings-view').classList.toggle('hidden', tabName !== 'settings');
+
+  if (tabName === 'list') renderListView();
+  if (isMap && map) map.relayout();
+}
+
+function renderListView() {
+  const contentEl = document.getElementById('list-content');
+  const titleEl = document.getElementById('list-title');
+
+  if (!userLat || !userLng) {
+    titleEl.textContent = '주변 판매점';
+    contentEl.innerHTML = '<p class="list-empty">위치 정보가 없어요.<br>설정 탭에서 내 위치를 켜주세요.</p>';
+    return;
+  }
+
+  const nearby = allStores
+    .map(s => ({ ...s, distNum: calcDistanceNum(userLat, userLng, s.lat, s.lng) }))
+    .filter(s => s.distNum <= 1)
+    .sort((a, b) => listSortMode === 'distance'
+      ? a.distNum - b.distNum
+      : a.name.localeCompare(b.name, 'ko'));
+
+  titleEl.textContent = `주변 판매점 (${nearby.length})`;
+
+  if (!nearby.length) {
+    contentEl.innerHTML = '<p class="list-empty">1km 이내 판매점이 없어요.</p>';
+    return;
+  }
+
+  contentEl.innerHTML = nearby.map(s =>
+    `<div class="list-store-card" onclick="onListCardClick(${s.id})">
+      <div class="list-store-name-row">
+        <span class="list-store-name">${s.name}</span>
+        <span class="list-store-dist">${formatDistance(s.distNum)}</span>
+      </div>
+      <span class="list-store-type">${s.type}</span>
+      <p class="list-store-address">📍 ${s.address}</p>
+    </div>`
+  ).join('');
+}
+
+function onListCardClick(storeId) {
+  const store = allStores.find(s => s.id === storeId);
+  if (!store) return;
+  switchTab('map');
+  map.setCenter(new kakao.maps.LatLng(store.lat, store.lng));
+  map.setLevel(3);
+  showPanel(store);
+}
 
 // ── 재고 제보 ────────────────────────────────────────────
 
