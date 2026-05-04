@@ -4,6 +4,7 @@ let markers = [];
 let markerElements = [];
 let renderedStores = [];
 let allStores = [];
+let stockReportMap = {};
 let activeType = 'all';
 let currentStore = null;
 let userLat = null;
@@ -28,11 +29,38 @@ function toggleFavorite(id) {
 const DEFAULT_LAT = 37.5447;
 const DEFAULT_LNG = 127.0558;
 
-const typeColors = {
-  '자판기': '#e53935',
-  '편의점': '#1e88e5',
-  '문방구': '#43a047'
-};
+function getPinColorConfig() {
+  const saved = localStorage.getItem('pinColorConfig');
+  if (saved) try { return JSON.parse(saved); } catch {}
+  return {
+    availableMaxHours: 24,
+    expiredHours: 72,
+    lowStockMaxHours: 24,
+    colors: {
+      available: '#43a047',
+      low_stock: '#fb8c00',
+      out_of_stock: '#e53935',
+      expired: '#e53935',
+      no_report: '#1e88e5'
+    }
+  };
+}
+
+function getPinColor(latestReport) {
+  const cfg = getPinColorConfig();
+  if (!latestReport) return cfg.colors.no_report;
+  const hoursSince = (Date.now() - new Date(latestReport.created_at).getTime()) / 3600000;
+  if (latestReport.report_type === 'out_of_stock') return cfg.colors.out_of_stock;
+  if (latestReport.report_type === 'low_stock') {
+    return hoursSince <= cfg.lowStockMaxHours ? cfg.colors.low_stock : cfg.colors.expired;
+  }
+  if (latestReport.report_type === 'available') {
+    if (hoursSince <= cfg.availableMaxHours) return cfg.colors.available;
+    if (hoursSince <= cfg.expiredHours) return cfg.colors.low_stock;
+    return cfg.colors.expired;
+  }
+  return cfg.colors.no_report;
+}
 
 function getLocationPref() {
   return localStorage.getItem('locationEnabled'); // null(첫방문) | 'true' | 'false'
@@ -126,11 +154,30 @@ function updateToggleUI() {
   if (toggle) toggle.checked = getLocationPref() === 'true';
 }
 
+async function loadStockReportMap() {
+  const { data } = await db.from('stock_reports')
+    .select('store_id, report_type, created_at')
+    .order('created_at', { ascending: false });
+  const result = {};
+  if (data) data.forEach(r => { if (!result[r.store_id]) result[r.store_id] = r; });
+  return result;
+}
+
 async function loadStores() {
-  const { data, error } = await db.from('stores').select('*');
-  if (error) return console.error(error);
-  allStores = data;
-  renderMarkers(data);
+  const [storesRes, reportMap] = await Promise.all([
+    db.from('stores').select('*'),
+    loadStockReportMap()
+  ]);
+  if (storesRes.error) return console.error(storesRes.error);
+  allStores = storesRes.data;
+  stockReportMap = reportMap;
+  renderMarkers(allStores);
+}
+
+function createPinElement(color, size) {
+  const el = document.createElement('div');
+  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);cursor:pointer;`;
+  return el;
 }
 
 function renderMarkers(stores) {
@@ -139,27 +186,21 @@ function renderMarkers(stores) {
   markerElements = [];
   renderedStores = [];
 
-  const typeIcons = {
-    '자판기': 'icons/vending.png',
-    '편의점': 'icons/convenience.png',
-    '문방구': 'icons/stationery.png',
-    '카드샵': 'icons/stationery.png'
-  };
-
   const level = map.getLevel();
   const visible = level <= 9;
   const size = getPinSize();
 
   stores.forEach(store => {
-    const el = document.createElement('img');
-    el.src = typeIcons[store.type] || 'icons/vending.png';
-    el.style.cssText = `width:${size}px;height:${size}px;cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));object-fit:contain`;
+    const color = getPinColor(stockReportMap[store.id]);
+    const el = createPinElement(color, size);
     markerElements.push(el);
     renderedStores.push(store);
 
     const overlay = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(store.lat, store.lng),
-      content: el
+      content: el,
+      xAnchor: 0.5,
+      yAnchor: 0.5
     });
     overlay.setMap((visible || store.type === '자판기') ? map : null);
     markers.push(overlay);
@@ -622,6 +663,13 @@ async function doSubmitStockReport(photoFile) {
   if (error) { alert('제보 실패: ' + error.message); return; }
 
   setMyReport(storeId, inserted.id);
+
+  // 핀 색 즉시 업데이트
+  stockReportMap[storeId] = { store_id: storeId, report_type: pendingReportType, created_at: new Date().toISOString() };
+  const pinIdx = renderedStores.findIndex(s => s.id === storeId);
+  if (pinIdx !== -1 && markerElements[pinIdx]) {
+    markerElements[pinIdx].style.background = getPinColor(stockReportMap[storeId]);
+  }
 
   // 3개 초과 시 오래된 것 삭제
   const { data: all } = await db.from('stock_reports')
