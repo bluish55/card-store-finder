@@ -191,6 +191,7 @@ function renderRuleList() {
 
 function initRuleDrag() {
   document.querySelectorAll('#rule-list .rule-item').forEach(item => {
+    // 터치
     item.addEventListener('touchstart', e => {
       if (e.target.closest('.rule-delete')) return;
       const touch = e.touches[0];
@@ -205,7 +206,7 @@ function initRuleDrag() {
           e.preventDefault();
           document.removeEventListener('touchmove', onMoveCheck);
           document.removeEventListener('touchend', onEndCheck);
-          startDrag(startY, item);
+          startDrag(startY, item, 'touch');
         } else if (dx > 8) {
           document.removeEventListener('touchmove', onMoveCheck);
           document.removeEventListener('touchend', onEndCheck);
@@ -220,10 +221,16 @@ function initRuleDrag() {
       document.addEventListener('touchmove', onMoveCheck, { passive: false });
       document.addEventListener('touchend', onEndCheck);
     }, { passive: true });
+
+    // 마우스
+    item.addEventListener('mousedown', e => {
+      if (e.target.closest('.rule-delete') || e.target.closest('.rule-content')) return;
+      startDrag(e.clientY, item, 'mouse');
+    });
   });
 }
 
-function startDrag(startY, el) {
+function startDrag(startY, el, inputType) {
   const rect = el.getBoundingClientRect();
   const offsetY = startY - rect.top;
 
@@ -238,25 +245,34 @@ function startDrag(startY, el) {
   el.style.width = rect.width + 'px';
   el.style.zIndex = '999';
 
+  function getClientY(e) {
+    return inputType === 'touch' ? e.touches[0].clientY : e.clientY;
+  }
+
   function onMove(e) {
-    e.preventDefault();
-    const t = e.touches[0];
-    el.style.top = (t.clientY - offsetY) + 'px';
+    if (inputType === 'touch') e.preventDefault();
+    const y = getClientY(e);
+    el.style.top = (y - offsetY) + 'px';
 
     const siblings = [...document.querySelectorAll('#rule-list .rule-item:not(.dragging)')];
     const over = siblings.find(s => {
       const r = s.getBoundingClientRect();
-      return t.clientY >= r.top && t.clientY <= r.bottom;
+      return y >= r.top && y <= r.bottom;
     });
     if (over) {
       const r = over.getBoundingClientRect();
-      t.clientY < r.top + r.height / 2 ? over.before(ph) : over.after(ph);
+      y < r.top + r.height / 2 ? over.before(ph) : over.after(ph);
     }
   }
 
   function onEnd() {
-    document.removeEventListener('touchmove', onMove);
-    document.removeEventListener('touchend', onEnd);
+    if (inputType === 'touch') {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    } else {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+    }
 
     el.classList.remove('dragging');
     el.style.position = '';
@@ -268,8 +284,13 @@ function startDrag(startY, el) {
     // 순서는 뒤로가기 시 저장 여부 확인 후 저장
   }
 
-  document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('touchend', onEnd);
+  if (inputType === 'touch') {
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+  } else {
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+  }
 }
 
 function deleteRule(ruleId) {
