@@ -365,6 +365,7 @@ document.getElementById('fav-btn').addEventListener('click', () => {
     btn.addEventListener('click', () => {
       if (btn.dataset.tab === 'report') {
         openStoreReportModal();
+        openMapPicker();
         return;
       }
       switchTab(btn.dataset.tab);
@@ -442,15 +443,15 @@ function renderListView() {
 
   const nearby = allStores
     .map(s => ({ ...s, distNum: calcDistanceNum(userLat, userLng, s.lat, s.lng) }))
-    .filter(s => s.distNum <= 1)
     .sort((a, b) => listSortMode === 'distance'
       ? a.distNum - b.distNum
-      : a.name.localeCompare(b.name, 'ko'));
+      : a.name.localeCompare(b.name, 'ko'))
+    .slice(0, 10);
 
-  titleEl.textContent = `주변 판매점 (${nearby.length})`;
+  titleEl.textContent = `가까운 판매점 (${nearby.length})`;
 
   if (!nearby.length) {
-    contentEl.innerHTML = '<p class="list-empty">1km 이내 판매점이 없어요.</p>';
+    contentEl.innerHTML = '<p class="list-empty">판매점 데이터를 불러오는 중이에요.</p>';
     return;
   }
 
