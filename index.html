@@ -69,6 +69,7 @@
       <div id="map-picker-pin">📍</div>
     </div>
     <div id="map-picker-bottom">
+      <p class="modal-sub">Step 1 / 3 — 위치 선택</p>
       <p id="map-picker-address">위치를 선택해주세요</p>
       <div class="modal-btn-row">
         <button id="map-picker-cancel" class="btn-secondary">취소</button>
@@ -80,17 +81,11 @@
   <div id="store-report-modal" class="modal-overlay hidden">
     <div class="modal-box">
       <button id="store-report-close" class="modal-close-btn">✕</button>
-      <div id="report-step-1">
-        <h3>판매처 제보</h3>
-        <p class="modal-sub">Step 1 / 3 — 위치 확인</p>
-        <p id="report-location-text">위치를 가져오는 중...</p>
-        <button onclick="openMapPicker()" class="btn-secondary">🗺 지도에서 선택</button>
-        <button id="report-step1-next" onclick="handleReportNext()" class="btn-inactive">다음</button>
-      </div>
       <div id="report-step-2" class="hidden">
         <h3>판매처 제보</h3>
         <p class="modal-sub">Step 2 / 3 — 정보 입력</p>
-        <input type="text" id="report-name" placeholder="상호명">
+        <p id="report-step2-address" class="modal-sub"></p>
+        <input type="text" id="report-name" placeholder="예) CU 홍대점, GS25 신촌역점">
         <select id="report-type">
           <option value="자판기">자판기</option>
           <option value="편의점">편의점</option>
@@ -100,7 +95,7 @@
         <input type="text" id="report-phone" placeholder="전화번호 (선택)">
         <input type="text" id="report-items" placeholder="취급품목 (선택)">
         <div class="modal-btn-row">
-          <button onclick="goReportStep(1)" class="btn-secondary">이전</button>
+          <button onclick="openMapPicker()" class="btn-secondary">이전</button>
           <button onclick="goReportStep(3)">다음</button>
         </div>
       </div>

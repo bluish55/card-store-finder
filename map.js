@@ -423,6 +423,9 @@ function switchTab(tabName) {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
 
+  document.getElementById('store-panel').classList.add('hidden');
+  closeSearch();
+
   const isMap = tabName === 'map';
   document.getElementById('top-row').classList.toggle('hidden', !isMap);
   document.getElementById('location-btn').classList.toggle('hidden', !isMap);
@@ -646,39 +649,14 @@ let pickerLat = null;
 let pickerLng = null;
 
 function openStoreReportModal() {
-  document.getElementById('store-report-modal').classList.remove('hidden');
   document.getElementById('report-name').value = '';
   document.getElementById('report-phone').value = '';
   document.getElementById('report-items').value = '';
   document.getElementById('report-photo').value = '';
+  document.getElementById('report-step2-address').textContent = '';
   reportLat = null;
   reportLng = null;
   reportAddress = null;
-  document.getElementById('report-step1-next').classList.add('btn-inactive');
-  goReportStep(1);
-
-  const tryGPS = (lat, lng) => {
-    reportLat = lat;
-    reportLng = lng;
-    const geocoder = new kakao.maps.services.Geocoder();
-    geocoder.coord2Address(lng, lat, (result, status) => {
-      if (status === kakao.maps.services.Status.OK) {
-        reportAddress = result[0].road_address?.address_name || result[0].address.address_name;
-        document.getElementById('report-location-text').textContent = `📍 ${reportAddress}`;
-      }
-    });
-  };
-
-  if (userLat !== null && userLng !== null) {
-    tryGPS(userLat, userLng);
-  } else if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => tryGPS(pos.coords.latitude, pos.coords.longitude),
-      () => { document.getElementById('report-location-text').textContent = '지도에서 위치를 선택해주세요.'; }
-    );
-  } else {
-    document.getElementById('report-location-text').textContent = '지도에서 위치를 선택해주세요.';
-  }
 }
 
 function openMapPicker() {
@@ -721,27 +699,19 @@ function confirmMapPicker() {
   reportLat = pickerLat;
   reportLng = pickerLng;
   reportAddress = document.getElementById('map-picker-address').textContent;
-  document.getElementById('report-location-text').textContent = `📍 ${reportAddress}`;
-  document.getElementById('report-step1-next').classList.remove('btn-inactive');
+  document.getElementById('report-step2-address').textContent = `📍 ${reportAddress}`;
   document.getElementById('map-picker').classList.add('hidden');
   document.getElementById('store-report-modal').classList.remove('hidden');
+  goReportStep(2);
 }
 
 function cancelMapPicker() {
   document.getElementById('map-picker').classList.add('hidden');
-  document.getElementById('store-report-modal').classList.remove('hidden');
-}
-
-function handleReportNext() {
-  if (document.getElementById('report-step1-next').classList.contains('btn-inactive')) {
-    openMapPicker();
-  } else {
-    goReportStep(2);
-  }
+  document.getElementById('store-report-modal').classList.add('hidden');
 }
 
 function goReportStep(step) {
-  [1, 2, 3].forEach(s => {
+  [2, 3].forEach(s => {
     document.getElementById(`report-step-${s}`).classList.toggle('hidden', s !== step);
   });
 }
