@@ -362,6 +362,51 @@ button {
   padding: 0;
 }
 
+/* 미저장 확인 모달 */
+.unsaved-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.unsaved-modal.hidden {
+  display: none !important;
+}
+
+.unsaved-box {
+  background: white;
+  width: 100%;
+  padding: 24px 16px 32px;
+  border-radius: 16px 16px 0 0;
+}
+
+.unsaved-box p {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.unsaved-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.unsaved-btns button {
+  flex: 1;
+  padding: 13px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
 /* 기타 */
 .info-text {
   font-size: 12px;

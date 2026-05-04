@@ -337,20 +337,38 @@ function getRuleFormSnapshot() {
   });
 }
 
+function showUnsavedModal(onSave, onDiscard) {
+  const modal = document.getElementById('unsaved-modal');
+  modal.classList.remove('hidden');
+  document.getElementById('unsaved-save').onclick = () => {
+    modal.classList.add('hidden');
+    onSave();
+  };
+  document.getElementById('unsaved-discard').onclick = () => {
+    modal.classList.add('hidden');
+    onDiscard();
+  };
+}
+
 function backFromPresetEdit() {
   const currentName = document.getElementById('preset-name-input').value.trim();
   if (currentName !== originalPresetName) {
-    if (confirm('변경사항을 저장할까요?')) savePresetName();
+    showUnsavedModal(
+      () => { savePresetName(); showMainView(); },
+      () => showMainView()
+    );
+    return;
   }
   showMainView();
 }
 
 function backFromRuleEdit() {
   if (getRuleFormSnapshot() !== ruleFormSnapshot) {
-    if (confirm('변경사항을 저장할까요?')) {
-      saveRule();
-      return;
-    }
+    showUnsavedModal(
+      () => saveRule(),
+      () => closeRuleEdit()
+    );
+    return;
   }
   closeRuleEdit();
 }
