@@ -4,6 +4,7 @@ let currentRuleId = null;
 let currentPinType = 'color';
 let currentPinImageData = null;
 let originalPresetName = '';
+let originalRuleOrder = [];
 let ruleFormSnapshot = '';
 
 const REPORT_TYPE_NAMES = {
@@ -65,6 +66,7 @@ function showPresetEditView(presetId) {
   if (preset) {
     document.getElementById('preset-name-input').value = preset.name;
     originalPresetName = preset.name;
+    originalRuleOrder = preset.rules.map(r => r.id);
   }
   renderRuleList();
 }
@@ -263,14 +265,7 @@ function startDrag(startY, el) {
     el.style.zIndex = '';
     ph.replaceWith(el);
 
-    const newOrder = [...document.querySelectorAll('#rule-list .rule-item')]
-      .map(item => parseInt(item.dataset.ruleId));
-    const data = loadData();
-    const preset = data.presets.find(p => p.id === currentPresetId);
-    if (preset) {
-      preset.rules = newOrder.map(id => preset.rules.find(r => r.id === id)).filter(Boolean);
-      saveData(data);
-    }
+    // 순서는 뒤로가기 시 저장 여부 확인 후 저장
   }
 
   document.addEventListener('touchmove', onMove, { passive: false });
@@ -350,11 +345,30 @@ function showUnsavedModal(onSave, onDiscard) {
   };
 }
 
+function getCurrentRuleOrder() {
+  return [...document.querySelectorAll('#rule-list .rule-item')]
+    .map(el => parseInt(el.dataset.ruleId)).join(',');
+}
+
+function saveRuleOrder() {
+  const newOrder = [...document.querySelectorAll('#rule-list .rule-item')]
+    .map(el => parseInt(el.dataset.ruleId));
+  const data = loadData();
+  const preset = data.presets.find(p => p.id === currentPresetId);
+  if (preset) {
+    preset.rules = newOrder.map(id => preset.rules.find(r => r.id === id)).filter(Boolean);
+    saveData(data);
+  }
+}
+
 function backFromPresetEdit() {
   const currentName = document.getElementById('preset-name-input').value.trim();
-  if (currentName !== originalPresetName) {
+  const nameChanged = currentName !== originalPresetName;
+  const orderChanged = getCurrentRuleOrder() !== originalRuleOrder.join(',');
+
+  if (nameChanged || orderChanged) {
     showUnsavedModal(
-      () => { savePresetName(); showMainView(); },
+      () => { savePresetName(); saveRuleOrder(); showMainView(); },
       () => showMainView()
     );
     return;
@@ -363,10 +377,14 @@ function backFromPresetEdit() {
 }
 
 function backFromRuleEdit() {
-  showUnsavedModal(
-    () => saveRule(),
-    () => closeRuleEdit()
-  );
+  if (getRuleFormSnapshot() !== ruleFormSnapshot) {
+    showUnsavedModal(
+      () => saveRule(),
+      () => closeRuleEdit()
+    );
+    return;
+  }
+  closeRuleEdit();
 }
 
 function closeRuleEdit() {
