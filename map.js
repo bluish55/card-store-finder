@@ -663,8 +663,8 @@ function openMapPicker() {
   document.getElementById('store-report-modal').classList.add('hidden');
   document.getElementById('map-picker').classList.remove('hidden');
 
-  const initLat = reportLat || DEFAULT_LAT;
-  const initLng = reportLng || DEFAULT_LNG;
+  const initLat = reportLat || userLat || DEFAULT_LAT;
+  const initLng = reportLng || userLng || DEFAULT_LNG;
 
   if (!mapPickerMap) {
     mapPickerMap = new kakao.maps.Map(document.getElementById('map-picker-map'), {
