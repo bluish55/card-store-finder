@@ -53,7 +53,7 @@
     <div class="modal-box">
       <button id="stock-photo-close" class="modal-close-btn">✕</button>
       <h3>사진으로 신뢰도를 높여보세요</h3>
-      <p class="modal-sub">영수증이나 진열대 사진을 첨부하면<br>신뢰도가 올라가요!</p>
+      <p class="modal-sub">진열대나 영수증 사진을 첨부하면 신뢰도가 올라가요.<br>개인정보가 포함된 부분은 가려주세요.</p>
       <input type="file" id="stock-photo-input" accept="image/*">
       <button id="stock-photo-submit">제보하기</button>
       <button id="stock-photo-skip" class="btn-secondary">사진 없이 제보</button>
@@ -105,7 +105,7 @@
       <div id="report-step-3" class="hidden">
         <h3>판매처 제보</h3>
         <p class="modal-sub">Step 3 / 3 — 사진 첨부 (선택)</p>
-        <p class="modal-hint">사진을 올리면 신뢰도가 올라가요!</p>
+        <p class="modal-hint">진열대나 영수증 사진을 첨부하면 신뢰도가 올라가요.<br>개인정보가 포함된 부분은 가려주세요.</p>
         <input type="file" id="report-photo" accept="image/*">
         <div class="modal-btn-row">
           <button onclick="goReportStep(2)" class="btn-secondary">이전</button>
@@ -142,6 +142,13 @@
       </div>
       <div id="stock-report-list"></div>
     </div>
+  </div>
+
+  <!-- 사진 뷰어 모달 -->
+  <div id="photo-modal" class="hidden">
+    <div id="photo-modal-overlay" onclick="closePhotoModal()"></div>
+    <img id="photo-modal-img" src="" alt="제보 사진">
+    <button id="photo-modal-close" onclick="closePhotoModal()">✕</button>
   </div>
 
   <div id="toast" class="hidden">제보 완료!</div>

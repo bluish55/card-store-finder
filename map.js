@@ -499,9 +499,19 @@ function relativeTime(dateStr) {
 
 function trustIcons(r) {
   const icons = [];
-  if (r.gps_verified) icons.push('📍');
-  if (r.photo_url) icons.push('📷');
+  if (r.gps_verified) icons.push('<span>📍</span>');
+  if (r.photo_url) icons.push(`<button class="photo-icon-btn" onclick="openPhotoModal('${r.photo_url}')">📷</button>`);
   return icons.join('');
+}
+
+function openPhotoModal(url) {
+  document.getElementById('photo-modal-img').src = url;
+  document.getElementById('photo-modal').classList.remove('hidden');
+}
+
+function closePhotoModal() {
+  document.getElementById('photo-modal').classList.add('hidden');
+  document.getElementById('photo-modal-img').src = '';
 }
 
 // ── 재고 제보 ────────────────────────────────────────────
