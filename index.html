@@ -131,7 +131,11 @@
     <p id="store-items"></p>
     <a id="navi-btn" target="_blank" rel="noopener">길찾기</a>
     <div id="stock-report-section">
-      <div id="stock-report-btns">
+      <div id="stock-report-header">
+        <button id="simple-report-btn" onclick="toggleSimpleReport()">간단 제보</button>
+        <button id="detail-report-btn" onclick="showToast('상세 제보 기능은 준비 중이에요')">상세 제보</button>
+      </div>
+      <div id="stock-report-btns" class="hidden">
         <button class="stock-btn in-stock-btn" onclick="submitStockReport('available')">✅ 있어요</button>
         <button class="stock-btn low-stock-btn" onclick="submitStockReport('low_stock')">⚠️ 마지막 몇 개</button>
         <button class="stock-btn out-stock-btn" onclick="submitStockReport('out_of_stock')">❌ 없어요</button>

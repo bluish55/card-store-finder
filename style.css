@@ -468,6 +468,35 @@ button {
   padding-top: 12px;
 }
 
+#stock-report-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#simple-report-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  background: #fff3e0;
+  color: #e65100;
+  border-radius: 8px;
+}
+
+#simple-report-btn.active {
+  background: #e65100;
+  color: white;
+}
+
+#detail-report-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  background: #f5f5f5;
+  color: #aaa;
+  border-radius: 8px;
+}
+
 #stock-report-btns {
   display: flex;
   gap: 8px;
@@ -523,25 +552,8 @@ button {
   flex: 1;
 }
 
-.report-trust {
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-.trust-낮음 {
-  background: #f5f5f5;
-  color: #999;
-}
-
-.trust-보통 {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.trust-높음 {
-  background: #e8f5e9;
-  color: #2e7d32;
+.report-icons {
+  font-size: 13px;
 }
 
 .no-report {

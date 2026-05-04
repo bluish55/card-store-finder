@@ -196,6 +196,8 @@ function showPanel(store) {
     distEl.textContent = '';
   }
   document.querySelectorAll('.stock-btn').forEach(btn => btn.disabled = false);
+  document.getElementById('stock-report-btns').classList.add('hidden');
+  document.getElementById('simple-report-btn').classList.remove('active');
   document.getElementById('stock-report-list').innerHTML = '';
   loadStockReports(store.id);
   document.getElementById('store-panel').classList.remove('hidden');
@@ -476,6 +478,32 @@ function onListCardClick(storeId) {
   showPanel(store);
 }
 
+function toggleSimpleReport() {
+  const btns = document.getElementById('stock-report-btns');
+  const btn = document.getElementById('simple-report-btn');
+  const isHidden = btns.classList.contains('hidden');
+  btns.classList.toggle('hidden', !isHidden);
+  btn.classList.toggle('active', isHidden);
+}
+
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return '방금 전';
+  if (mins < 60) return `${mins}분 전`;
+  if (hours < 24) return `${hours}시간 전`;
+  return `${days}일 전`;
+}
+
+function trustIcons(r) {
+  const icons = [];
+  if (r.gps_verified) icons.push('📍');
+  if (r.photo_url) icons.push('📷');
+  return icons.join('');
+}
+
 // ── 재고 제보 ────────────────────────────────────────────
 
 function showToast(msg = '제보 완료!') {
@@ -523,13 +551,12 @@ async function loadStockReports(storeId) {
     return;
   }
   el.innerHTML = data.map(r => {
-    const d = new Date(r.created_at);
-    const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
     const typeStr = r.report_type === 'available' ? '✅ 있어요' : r.report_type === 'low_stock' ? '⚠️ 마지막 몇 개' : '❌ 없어요';
+    const icons = trustIcons(r);
     return `<div class="stock-report-item">
       <span class="report-type">${typeStr}</span>
-      <span class="report-time">${timeStr}</span>
-      <span class="report-trust trust-${r.trust_level}">${r.trust_level}</span>
+      <span class="report-time">${relativeTime(r.created_at)}</span>
+      ${icons ? `<span class="report-icons">${icons}</span>` : ''}
     </div>`;
   }).join('');
 }
