@@ -168,12 +168,9 @@ function renderRuleList() {
     return;
   }
 
-  el.innerHTML = preset.rules.map((rule, idx) => `
-    <div class="rule-item">
-      <div class="rule-order">
-        <button onclick="moveRule(${rule.id}, -1)" ${idx === 0 ? 'disabled' : ''}>↑</button>
-        <button onclick="moveRule(${rule.id}, 1)" ${idx === preset.rules.length - 1 ? 'disabled' : ''}>↓</button>
-      </div>
+  el.innerHTML = preset.rules.map((rule) => `
+    <div class="rule-item" data-rule-id="${rule.id}">
+      <div class="drag-handle">⠿</div>
       <div class="rule-content" onclick="openRuleEdit(${rule.id})">
         <span class="rule-condition">${conditionText(rule.condition)}</span>
         <span class="rule-arrow">→</span>
@@ -182,18 +179,73 @@ function renderRuleList() {
       <button class="rule-delete" onclick="deleteRule(${rule.id})">✕</button>
     </div>
   `).join('');
+  initRuleDrag();
 }
 
-function moveRule(ruleId, direction) {
-  const data = loadData();
-  const preset = data.presets.find(p => p.id === currentPresetId);
-  if (!preset) return;
-  const idx = preset.rules.findIndex(r => r.id === ruleId);
-  const newIdx = idx + direction;
-  if (newIdx < 0 || newIdx >= preset.rules.length) return;
-  [preset.rules[idx], preset.rules[newIdx]] = [preset.rules[newIdx], preset.rules[idx]];
-  saveData(data);
-  renderRuleList();
+function initRuleDrag() {
+  document.querySelectorAll('#rule-list .rule-item').forEach(item => {
+    item.querySelector('.drag-handle').addEventListener('touchstart', e => {
+      e.preventDefault();
+      startDrag(e, item);
+    }, { passive: false });
+  });
+}
+
+function startDrag(e, el) {
+  const touch = e.touches[0];
+  const rect = el.getBoundingClientRect();
+  const offsetY = touch.clientY - rect.top;
+
+  const ph = document.createElement('div');
+  ph.className = 'drag-placeholder';
+  ph.style.height = rect.height + 'px';
+  el.after(ph);
+
+  el.classList.add('dragging');
+  el.style.position = 'fixed';
+  el.style.top = rect.top + 'px';
+  el.style.width = rect.width + 'px';
+  el.style.zIndex = '999';
+
+  function onMove(e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    el.style.top = (t.clientY - offsetY) + 'px';
+
+    const siblings = [...document.querySelectorAll('#rule-list .rule-item:not(.dragging)')];
+    const over = siblings.find(s => {
+      const r = s.getBoundingClientRect();
+      return t.clientY >= r.top && t.clientY <= r.bottom;
+    });
+    if (over) {
+      const r = over.getBoundingClientRect();
+      t.clientY < r.top + r.height / 2 ? over.before(ph) : over.after(ph);
+    }
+  }
+
+  function onEnd() {
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onEnd);
+
+    el.classList.remove('dragging');
+    el.style.position = '';
+    el.style.top = '';
+    el.style.width = '';
+    el.style.zIndex = '';
+    ph.replaceWith(el);
+
+    const newOrder = [...document.querySelectorAll('#rule-list .rule-item')]
+      .map(item => parseInt(item.dataset.ruleId));
+    const data = loadData();
+    const preset = data.presets.find(p => p.id === currentPresetId);
+    if (preset) {
+      preset.rules = newOrder.map(id => preset.rules.find(r => r.id === id)).filter(Boolean);
+      saveData(data);
+    }
+  }
+
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend', onEnd);
 }
 
 function deleteRule(ruleId) {

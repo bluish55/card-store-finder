@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   background: #f5f5f5;
@@ -187,23 +191,25 @@ button {
   border-top: none;
 }
 
-.rule-order {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.drag-handle {
+  color: #ccc;
+  font-size: 18px;
+  padding: 4px 6px;
+  cursor: grab;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
 }
 
-.rule-order button {
-  background: #f5f5f5;
-  color: #666;
-  padding: 3px 6px;
-  font-size: 11px;
-  border-radius: 4px;
+.rule-item.dragging {
+  opacity: 0.95;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  border-radius: 0;
 }
 
-.rule-order button:disabled {
-  opacity: 0.3;
-  cursor: default;
+.drag-placeholder {
+  background: #f0f0f0;
 }
 
 .rule-content {
