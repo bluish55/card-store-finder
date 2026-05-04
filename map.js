@@ -218,16 +218,16 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 
 function openSearch() {
   document.getElementById('search-bar').classList.remove('hidden');
-  document.getElementById('search-btn').classList.add('hidden');
   document.getElementById('filter-bar').classList.add('hidden');
+  document.getElementById('search-row').classList.add('hidden');
   document.getElementById('search-input').focus();
 }
 
 function closeSearch() {
   document.getElementById('search-bar').classList.add('hidden');
   document.getElementById('search-dropdown').classList.add('hidden');
-  document.getElementById('search-btn').classList.remove('hidden');
   document.getElementById('filter-bar').classList.remove('hidden');
+  document.getElementById('search-row').classList.remove('hidden');
   document.getElementById('search-input').value = '';
 }
 

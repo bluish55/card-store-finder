@@ -22,41 +22,28 @@ body {
   left: 16px;
   right: 16px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   z-index: 10;
-  height: 40px;
 }
 
 #filter-bar {
-  flex: 1;
   display: flex;
   gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-#filter-bar::-webkit-scrollbar {
-  display: none;
-}
-
-@media (min-width: 600px) {
-  #filter-bar {
-    justify-content: center;
-  }
 }
 
 .filter-btn {
-  padding: 7px 10px;
+  flex: 1;
+  padding: 7px 4px;
   border: none;
   border-radius: 20px;
   background: white;
   color: black;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
+  text-align: center;
 }
 
 .filter-btn.active {
@@ -161,24 +148,24 @@ body {
 }
 
 
-/* 검색 버튼 */
+/* 검색 행 */
+#search-row {
+  display: flex;
+  align-items: center;
+}
+
 #search-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  height: 34px;
+  border-radius: 20px;
   background: white;
-  color: black;
-  font-size: 16px;
+  color: #555;
+  font-size: 13px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  padding: 0;
+  padding: 0 14px;
 }
 
 /* 검색 바 */
 #search-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
   display: flex;
   align-items: center;
   background: white;
@@ -707,6 +694,7 @@ button {
   background: #f8f8f8;
   z-index: 50;
   overflow-y: auto;
+  overscroll-behavior: none;
 }
 
 /* 리스트 탭 */
