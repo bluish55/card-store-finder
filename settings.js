@@ -3,6 +3,8 @@ let currentPresetId = null;
 let currentRuleId = null;
 let currentPinType = 'color';
 let currentPinImageData = null;
+let originalPresetName = '';
+let ruleFormSnapshot = '';
 
 const REPORT_TYPE_NAMES = {
   available: '있어요',
@@ -60,7 +62,10 @@ function showPresetEditView(presetId) {
 
   const data = loadData();
   const preset = data.presets.find(p => p.id === presetId);
-  if (preset) document.getElementById('preset-name-input').value = preset.name;
+  if (preset) {
+    document.getElementById('preset-name-input').value = preset.name;
+    originalPresetName = preset.name;
+  }
   renderRuleList();
 }
 
@@ -184,17 +189,41 @@ function renderRuleList() {
 
 function initRuleDrag() {
   document.querySelectorAll('#rule-list .rule-item').forEach(item => {
-    item.querySelector('.drag-handle').addEventListener('touchstart', e => {
-      e.preventDefault();
-      startDrag(e, item);
-    }, { passive: false });
+    item.addEventListener('touchstart', e => {
+      if (e.target.closest('.rule-delete')) return;
+      const touch = e.touches[0];
+      const startY = touch.clientY;
+      const startX = touch.clientX;
+
+      function onMoveCheck(e) {
+        const t = e.touches[0];
+        const dy = Math.abs(t.clientY - startY);
+        const dx = Math.abs(t.clientX - startX);
+        if (dy > 8) {
+          e.preventDefault();
+          document.removeEventListener('touchmove', onMoveCheck);
+          document.removeEventListener('touchend', onEndCheck);
+          startDrag(startY, item);
+        } else if (dx > 8) {
+          document.removeEventListener('touchmove', onMoveCheck);
+          document.removeEventListener('touchend', onEndCheck);
+        }
+      }
+
+      function onEndCheck() {
+        document.removeEventListener('touchmove', onMoveCheck);
+        document.removeEventListener('touchend', onEndCheck);
+      }
+
+      document.addEventListener('touchmove', onMoveCheck, { passive: false });
+      document.addEventListener('touchend', onEndCheck);
+    }, { passive: true });
   });
 }
 
-function startDrag(e, el) {
-  const touch = e.touches[0];
+function startDrag(startY, el) {
   const rect = el.getBoundingClientRect();
-  const offsetY = touch.clientY - rect.top;
+  const offsetY = startY - rect.top;
 
   const ph = document.createElement('div');
   ph.className = 'drag-placeholder';
@@ -292,6 +321,38 @@ function openRuleEdit(ruleId) {
     document.getElementById('pin-image-preview').innerHTML = '';
   }
   updateTimeInputs();
+  ruleFormSnapshot = getRuleFormSnapshot();
+}
+
+function getRuleFormSnapshot() {
+  return JSON.stringify({
+    reportType: document.getElementById('rule-report-type').value,
+    timeType: document.getElementById('rule-time-type').value,
+    minHours: document.getElementById('rule-min-hours').value,
+    maxHours: document.getElementById('rule-max-hours').value,
+    favoriteOnly: document.getElementById('rule-favorite-only').checked,
+    pinType: currentPinType,
+    pinColor: document.getElementById('rule-pin-color').value,
+    pinImage: currentPinImageData
+  });
+}
+
+function backFromPresetEdit() {
+  const currentName = document.getElementById('preset-name-input').value.trim();
+  if (currentName !== originalPresetName) {
+    if (confirm('변경사항을 저장할까요?')) savePresetName();
+  }
+  showMainView();
+}
+
+function backFromRuleEdit() {
+  if (getRuleFormSnapshot() !== ruleFormSnapshot) {
+    if (confirm('변경사항을 저장할까요?')) {
+      saveRule();
+      return;
+    }
+  }
+  closeRuleEdit();
 }
 
 function closeRuleEdit() {

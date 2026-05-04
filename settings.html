@@ -42,7 +42,7 @@
   <!-- View 2: 프리셋 편집 -->
   <div id="preset-edit-view" class="hidden">
     <div class="page-header">
-      <button class="back-btn" onclick="showMainView()">←</button>
+      <button class="back-btn" onclick="backFromPresetEdit()">←</button>
       <input type="text" id="preset-name-input" placeholder="프리셋 이름">
       <button onclick="savePresetName()">저장</button>
     </div>
@@ -56,7 +56,7 @@
   <!-- View 3: 규칙 편집 -->
   <div id="rule-edit-view" class="hidden">
     <div class="page-header">
-      <button class="back-btn" onclick="closeRuleEdit()">←</button>
+      <button class="back-btn" onclick="backFromRuleEdit()">←</button>
       <h1>규칙 설정</h1>
       <button onclick="saveRule()">저장</button>
     </div>
