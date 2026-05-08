@@ -139,7 +139,7 @@ function createMap(lat, lng) {
   const container = document.getElementById('map');
   const options = {
     center: new kakao.maps.LatLng(lat, lng),
-    level: 3
+    level: 4
   };
   map = new kakao.maps.Map(container, options);
   kakao.maps.event.addListener(map, 'zoom_changed', updateMarkerVisibility);
@@ -433,6 +433,7 @@ document.getElementById('fav-btn').addEventListener('click', () => {
     renderListView();
   });
   initListFilter();
+  switchTab('list');
   document.getElementById('store-report-close').addEventListener('click', () => {
     document.getElementById('store-report-modal').classList.add('hidden');
   });
@@ -685,7 +686,7 @@ function renderListView() {
   }
 
   const filtered = applyListFilter(allStores);
-  titleEl.textContent = `주변 판매점 (${filtered.length})`;
+  titleEl.textContent = listSortMode === 'distance' ? `주변 판매점 (${filtered.length})` : `최신 제보 판매점 (${filtered.length})`;
 
   if (!filtered.length) {
     contentEl.innerHTML = '<p class="list-empty">조건에 맞는 판매점이 없어요.</p>';
