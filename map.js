@@ -181,6 +181,7 @@ async function loadStores() {
   allStores = storesRes.data;
   stockReportMap = reportMap;
   renderMarkers(allStores);
+  if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
 }
 
 function createPinElement(pin, size) {
