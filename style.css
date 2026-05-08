@@ -781,3 +781,142 @@ button {
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
+
+/* 리스트 헤더 버튼 그룹 */
+#list-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#list-filter-btn {
+  background: none;
+  color: #666;
+  font-size: 18px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  line-height: 1;
+}
+
+#list-filter-btn.active {
+  background: #fff3e0;
+  border-color: #e65100;
+  color: #e65100;
+}
+
+/* 필터 패널 */
+#list-filter-panel {
+  background: white;
+  border-bottom: 1px solid #eee;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lf-section.lf-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lf-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.lf-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lf-value {
+  font-size: 12px;
+  color: #e53935;
+  font-weight: 600;
+}
+
+.lf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: #e53935;
+  color: white;
+  border-color: #e53935;
+}
+
+#count-custom-input {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* 제보 시간 슬라이더 */
+.lf-slider-wrap {
+  padding-bottom: 4px;
+}
+
+#time-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #ddd;
+  outline: none;
+  padding: 0;
+  border: none;
+}
+
+#time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e53935;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+#time-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e53935;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+.lf-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #bbb;
+}

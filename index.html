@@ -154,7 +154,71 @@
   <div id="list-view" class="tab-view hidden">
     <div id="list-header">
       <span id="list-title">주변 판매점</span>
-      <button id="list-sort-btn">📍</button>
+      <div id="list-header-btns">
+        <button id="list-filter-btn">⚙️</button>
+        <button id="list-sort-btn">📍 거리</button>
+      </div>
+    </div>
+    <div id="list-filter-panel" class="hidden">
+      <div class="lf-section">
+        <span class="lf-label">개수</span>
+        <div class="lf-chips" id="count-chips">
+          <button class="chip" data-count="10">10</button>
+          <button class="chip" data-count="20">20</button>
+          <button class="chip" data-count="30">30</button>
+          <button class="chip" data-count="50">50</button>
+          <button class="chip" data-count="custom">직접 입력</button>
+        </div>
+        <input type="number" id="count-custom-input" class="hidden" placeholder="개수 입력" min="1" max="500">
+      </div>
+      <div class="lf-section">
+        <span class="lf-label">종류</span>
+        <div class="lf-chips" id="type-chips">
+          <button class="chip" data-type="all">전체</button>
+          <button class="chip" data-type="자판기">자판기</button>
+          <button class="chip" data-type="편의점">편의점</button>
+          <button class="chip" data-type="문방구">문방구</button>
+          <button class="chip" data-type="카드샵">카드샵</button>
+        </div>
+      </div>
+      <div class="lf-section">
+        <span class="lf-label">재고 상태</span>
+        <div class="lf-chips" id="report-chips">
+          <button class="chip" data-report="all">전체</button>
+          <button class="chip" data-report="available">있어요</button>
+          <button class="chip" data-report="low_stock">마지막 몇 개</button>
+          <button class="chip" data-report="out_of_stock">없어요</button>
+          <button class="chip" data-report="no_report">제보 없음</button>
+        </div>
+      </div>
+      <div class="lf-section">
+        <span class="lf-label">신뢰도</span>
+        <div class="lf-chips" id="trust-chips">
+          <button class="chip" data-trust="all">전체</button>
+          <button class="chip" data-trust="photo">사진</button>
+          <button class="chip" data-trust="gps">GPS</button>
+          <button class="chip" data-trust="both">사진+GPS</button>
+        </div>
+      </div>
+      <div class="lf-section">
+        <div class="lf-label-row">
+          <span class="lf-label">제보 시간</span>
+          <span id="time-slider-value" class="lf-value">전체</span>
+        </div>
+        <div class="lf-slider-wrap">
+          <input type="range" id="time-slider" min="0" max="4" step="1" value="4">
+          <div class="lf-slider-labels">
+            <span>6h</span><span>24h</span><span>72h</span><span>1주</span><span>전체</span>
+          </div>
+        </div>
+      </div>
+      <div class="lf-section lf-row">
+        <span class="lf-label">찜한 가게만</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="fav-only-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
     <div id="list-content"></div>
   </div>

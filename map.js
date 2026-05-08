@@ -165,7 +165,7 @@ function updateToggleUI() {
 
 async function loadStockReportMap() {
   const { data } = await db.from('stock_reports')
-    .select('store_id, report_type, created_at')
+    .select('store_id, report_type, created_at, photo_url, gps_verified')
     .order('created_at', { ascending: false });
   const result = {};
   if (data) data.forEach(r => { if (!result[r.store_id]) result[r.store_id] = r; });
@@ -424,11 +424,15 @@ document.getElementById('fav-btn').addEventListener('click', () => {
   });
 
   // 리스트 정렬
+  document.getElementById('list-sort-btn').textContent = listSortMode === 'distance' ? '📍 거리' : '🕐 최신';
   document.getElementById('list-sort-btn').addEventListener('click', () => {
-    listSortMode = listSortMode === 'distance' ? 'alpha' : 'distance';
-    document.getElementById('list-sort-btn').textContent = listSortMode === 'distance' ? '📍' : '가나다';
+    listSortMode = listSortMode === 'distance' ? 'recent' : 'distance';
+    document.getElementById('list-sort-btn').textContent = listSortMode === 'distance' ? '📍 거리' : '🕐 최신';
+    listFilter.sortMode = listSortMode;
+    saveListFilter();
     renderListView();
   });
+  initListFilter();
   document.getElementById('store-report-close').addEventListener('click', () => {
     document.getElementById('store-report-modal').classList.add('hidden');
   });
@@ -473,7 +477,180 @@ function formatDistance(dist) {
   return dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
 }
 
-let listSortMode = 'distance';
+// ── 리스트 필터 ─────────────────────────────────────────
+
+const TIME_HOURS_MAP = [6, 24, 72, 168, null];
+const TIME_LABELS = ['6시간 이내', '24시간 이내', '72시간 이내', '1주일 이내', '전체'];
+
+function loadListFilter() {
+  try {
+    const saved = localStorage.getItem('listFilter');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { sortMode: 'distance', count: 10, countCustom: null, types: [], reportTypes: [], trustTypes: [], timeIndex: 4, favOnly: false };
+}
+
+function saveListFilter() {
+  localStorage.setItem('listFilter', JSON.stringify(listFilter));
+}
+
+let listFilter = loadListFilter();
+let listSortMode = listFilter.sortMode || 'distance';
+
+function applyListFilter(stores) {
+  let result = stores.map(s => ({
+    ...s,
+    distNum: calcDistanceNum(userLat, userLng, s.lat, s.lng),
+    report: stockReportMap[s.id] || null
+  }));
+
+  if (listFilter.favOnly)
+    result = result.filter(s => isFavorite(s.id));
+
+  if (listFilter.types.length > 0)
+    result = result.filter(s => listFilter.types.includes(s.type));
+
+  if (listFilter.reportTypes.length > 0)
+    result = result.filter(s => listFilter.reportTypes.includes(s.report ? s.report.report_type : 'no_report'));
+
+  if (listFilter.trustTypes.length > 0) {
+    result = result.filter(s => {
+      if (!s.report) return false;
+      const hasPhoto = !!s.report.photo_url;
+      const hasGps = !!s.report.gps_verified;
+      return listFilter.trustTypes.some(t =>
+        (t === 'photo' && hasPhoto) ||
+        (t === 'gps' && hasGps) ||
+        (t === 'both' && hasPhoto && hasGps)
+      );
+    });
+  }
+
+  const maxHours = TIME_HOURS_MAP[listFilter.timeIndex];
+  if (maxHours !== null) {
+    result = result.filter(s => {
+      if (!s.report) return false;
+      return (Date.now() - new Date(s.report.created_at).getTime()) / 3600000 <= maxHours;
+    });
+  }
+
+  result.sort((a, b) => {
+    if (listSortMode === 'recent') {
+      const at = a.report ? new Date(a.report.created_at).getTime() : 0;
+      const bt = b.report ? new Date(b.report.created_at).getTime() : 0;
+      return bt - at;
+    }
+    return a.distNum - b.distNum;
+  });
+
+  const count = listFilter.count === 'custom' ? (listFilter.countCustom || 10) : listFilter.count;
+  return result.slice(0, count);
+}
+
+function updateFilterBtnState() {
+  const active =
+    listFilter.types.length > 0 ||
+    listFilter.reportTypes.length > 0 ||
+    listFilter.trustTypes.length > 0 ||
+    listFilter.timeIndex < 4 ||
+    listFilter.favOnly ||
+    listFilter.count !== 10;
+  document.getElementById('list-filter-btn').classList.toggle('active', active);
+}
+
+function initMultiChips(containerId, attr, currentValues, onChange) {
+  const isAll = currentValues.length === 0;
+  document.querySelectorAll('#' + containerId + ' .chip').forEach(btn => {
+    const val = btn.dataset[attr];
+    btn.classList.toggle('active', val === 'all' ? isAll : currentValues.includes(val));
+    btn.addEventListener('click', () => {
+      const chips = document.querySelectorAll('#' + containerId + ' .chip');
+      if (val === 'all') {
+        chips.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        onChange([]);
+      } else {
+        document.querySelector('#' + containerId + ' .chip[data-' + attr + '="all"]').classList.remove('active');
+        btn.classList.toggle('active');
+        const selected = [...chips]
+          .filter(b => b.dataset[attr] !== 'all' && b.classList.contains('active'))
+          .map(b => b.dataset[attr]);
+        if (selected.length === 0)
+          document.querySelector('#' + containerId + ' .chip[data-' + attr + '="all"]').classList.add('active');
+        onChange(selected);
+      }
+    });
+  });
+}
+
+function initListFilter() {
+  document.querySelectorAll('#count-chips .chip').forEach(btn => {
+    const val = btn.dataset.count;
+    btn.classList.toggle('active',
+      val === 'custom' ? listFilter.count === 'custom' : parseInt(val) === listFilter.count
+    );
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#count-chips .chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (val === 'custom') {
+        listFilter.count = 'custom';
+        document.getElementById('count-custom-input').classList.remove('hidden');
+        document.getElementById('count-custom-input').focus();
+      } else {
+        listFilter.count = parseInt(val);
+        listFilter.countCustom = null;
+        document.getElementById('count-custom-input').classList.add('hidden');
+      }
+      saveListFilter();
+      updateFilterBtnState();
+      renderListView();
+    });
+  });
+
+  const customInput = document.getElementById('count-custom-input');
+  if (listFilter.count === 'custom') {
+    customInput.classList.remove('hidden');
+    customInput.value = listFilter.countCustom || '';
+  }
+  customInput.addEventListener('input', () => {
+    const val = parseInt(customInput.value);
+    if (val > 0) {
+      listFilter.countCustom = val;
+      saveListFilter();
+      renderListView();
+    }
+  });
+
+  initMultiChips('type-chips', 'type', listFilter.types, v => { listFilter.types = v; saveListFilter(); updateFilterBtnState(); renderListView(); });
+  initMultiChips('report-chips', 'report', listFilter.reportTypes, v => { listFilter.reportTypes = v; saveListFilter(); updateFilterBtnState(); renderListView(); });
+  initMultiChips('trust-chips', 'trust', listFilter.trustTypes, v => { listFilter.trustTypes = v; saveListFilter(); updateFilterBtnState(); renderListView(); });
+
+  const slider = document.getElementById('time-slider');
+  slider.value = listFilter.timeIndex;
+  document.getElementById('time-slider-value').textContent = TIME_LABELS[listFilter.timeIndex];
+  slider.addEventListener('input', () => {
+    listFilter.timeIndex = parseInt(slider.value);
+    document.getElementById('time-slider-value').textContent = TIME_LABELS[listFilter.timeIndex];
+    saveListFilter();
+    updateFilterBtnState();
+    renderListView();
+  });
+
+  const favToggle = document.getElementById('fav-only-toggle');
+  favToggle.checked = listFilter.favOnly;
+  favToggle.addEventListener('change', () => {
+    listFilter.favOnly = favToggle.checked;
+    saveListFilter();
+    updateFilterBtnState();
+    renderListView();
+  });
+
+  document.getElementById('list-filter-btn').addEventListener('click', () => {
+    document.getElementById('list-filter-panel').classList.toggle('hidden');
+  });
+
+  updateFilterBtnState();
+}
 
 function switchTab(tabName) {
   if (tabName === 'settings') {
@@ -507,21 +684,15 @@ function renderListView() {
     return;
   }
 
-  const nearby = allStores
-    .map(s => ({ ...s, distNum: calcDistanceNum(userLat, userLng, s.lat, s.lng) }))
-    .sort((a, b) => listSortMode === 'distance'
-      ? a.distNum - b.distNum
-      : a.name.localeCompare(b.name, 'ko'))
-    .slice(0, 10);
+  const filtered = applyListFilter(allStores);
+  titleEl.textContent = `주변 판매점 (${filtered.length})`;
 
-  titleEl.textContent = `가까운 판매점 (${nearby.length})`;
-
-  if (!nearby.length) {
-    contentEl.innerHTML = '<p class="list-empty">판매점 데이터를 불러오는 중이에요.</p>';
+  if (!filtered.length) {
+    contentEl.innerHTML = '<p class="list-empty">조건에 맞는 판매점이 없어요.</p>';
     return;
   }
 
-  contentEl.innerHTML = nearby.map(s =>
+  contentEl.innerHTML = filtered.map(s =>
     `<div class="list-store-card" onclick="onListCardClick(${s.id})">
       <div class="list-store-name-row">
         <span class="list-store-name">${s.name}</span>
