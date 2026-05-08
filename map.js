@@ -172,16 +172,44 @@ async function loadStockReportMap() {
   return result;
 }
 
+function loadStoresCache() {
+  try {
+    const c = localStorage.getItem('storesCache');
+    return c ? JSON.parse(c) : null;
+  } catch { return null; }
+}
+
+function saveStoresCache(stores, reportMap) {
+  try {
+    localStorage.setItem('storesCache', JSON.stringify({ stores, reportMap }));
+  } catch {}
+}
+
+function applyStoresData(stores, reportMap) {
+  allStores = stores;
+  stockReportMap = reportMap;
+  renderMarkers(allStores);
+  if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
+}
+
 async function loadStores() {
+  const cache = loadStoresCache();
+
+  if (cache) {
+    applyStoresData(cache.stores, cache.reportMap);
+  } else {
+    const listContent = document.getElementById('list-content');
+    if (listContent) listContent.innerHTML = '<div class="list-loading"><div class="list-spinner"></div><p>판매점 정보를 불러오는 중이에요</p></div>';
+  }
+
   const [storesRes, reportMap] = await Promise.all([
     db.from('stores').select('*'),
     loadStockReportMap()
   ]);
   if (storesRes.error) return console.error(storesRes.error);
-  allStores = storesRes.data;
-  stockReportMap = reportMap;
-  renderMarkers(allStores);
-  if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
+
+  saveStoresCache(storesRes.data, reportMap);
+  applyStoresData(storesRes.data, reportMap);
 }
 
 function createPinElement(pin, size) {

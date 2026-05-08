@@ -920,3 +920,27 @@ button {
   font-size: 11px;
   color: #bbb;
 }
+
+/* 리스트 로딩 */
+.list-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 16px;
+  color: #bbb;
+  font-size: 14px;
+}
+
+.list-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #eee;
+  border-top-color: #e53935;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
