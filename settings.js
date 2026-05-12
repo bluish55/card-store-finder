@@ -789,7 +789,12 @@ function openNotiMapPicker() {
   } else if (notiFixedLat) {
     notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
   }
-  // 초기 상태 적용
+  // 초기 상태 적용 - 현재 프리셋 반경 읽기
+  const activeChip = document.querySelector('#noti-radius-chips .chip.active');
+  if (activeChip) notiPickerRadius = Number(activeChip.dataset.value);
+  document.querySelectorAll('.picker-radius-chip').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.value) === notiPickerRadius);
+  });
   document.getElementById('noti-radius-visible-toggle').checked = notiPickerRadiusVisible;
   const initLabel = notiPickerRadius >= 1000 ? (notiPickerRadius / 1000) + 'km' : notiPickerRadius + 'm';
   document.getElementById('noti-radius-size-btn').textContent = initLabel + ' ▾';
@@ -913,6 +918,10 @@ function confirmNotiMapPicker() {
   notiFixedLng = notiPickerLng;
   notiFixedAddress = document.getElementById('noti-picker-address').textContent;
   document.getElementById('noti-loc-fixed-address').textContent = notiFixedAddress;
+  // 반경 프리셋 칩 동기화
+  document.querySelectorAll('#noti-radius-chips .chip').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.value) === notiPickerRadius);
+  });
   cancelNotiMapPicker();
 }
 

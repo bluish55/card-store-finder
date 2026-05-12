@@ -273,11 +273,12 @@
     <!-- 반경 컨트롤 (우측 상단) -->
     <div id="noti-radius-control" style="position:absolute;top:12px;right:12px;z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <div style="display:flex;align-items:center;gap:10px;background:white;padding:7px 12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+        <span style="font-size:13px;color:#333;font-weight:600;white-space:nowrap">반경 표시</span>
+        <button id="noti-radius-size-btn" onclick="toggleNotiPickerRadiusChips()" style="border:none;background:none;color:#e53935;font-size:13px;font-weight:600;cursor:pointer;padding:0;white-space:nowrap">1km ▾</button>
         <label class="toggle-switch" onclick="event.stopPropagation()">
           <input type="checkbox" id="noti-radius-visible-toggle" onchange="onNotiRadiusToggle(this.checked)">
           <span class="toggle-slider"></span>
         </label>
-        <button id="noti-radius-size-btn" onclick="toggleNotiPickerRadiusChips()" style="border:none;background:none;color:#333;font-size:13px;font-weight:600;cursor:pointer;padding:0;white-space:nowrap">1km ▾</button>
       </div>
       <div id="noti-picker-radius-chips" style="display:none;flex-direction:column;gap:4px;align-items:flex-end">
         <button class="picker-radius-chip" data-value="500" onclick="setNotiPickerRadius(500)">500m</button>
