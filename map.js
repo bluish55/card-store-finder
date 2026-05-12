@@ -109,6 +109,7 @@ function getCurrentLocation() {
       userLng = pos.coords.longitude;
       map.setCenter(new kakao.maps.LatLng(userLat, userLng));
       if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
+      updateNotiGpsLocation(userLat, userLng);
     },
     (err) => {
       if (err.code === err.PERMISSION_DENIED) {
@@ -499,6 +500,9 @@ document.getElementById('fav-btn').addEventListener('click', () => {
   document.getElementById('stock-photo-skip').addEventListener('click', () => {
     doSubmitStockReport(null);
   });
+
+  initServiceWorkerMessages();
+  checkNotificationTabParam();
 });
 
 // ── 탭 네비게이션 ─────────────────────────────────────────
@@ -706,9 +710,11 @@ function switchTab(tabName) {
   const isMap = tabName === 'map';
   document.getElementById('top-row').classList.toggle('hidden', !isMap);
   document.getElementById('location-btn').classList.toggle('hidden', !isMap);
-  document.getElementById('list-view').classList.toggle('hidden', tabName !== 'list');
+  const isListLike = tabName === 'list' || tabName === 'notifications';
+  document.getElementById('list-view').classList.toggle('hidden', !isListLike);
 
   if (tabName === 'list') renderListView();
+  if (tabName === 'notifications') renderNotiLogView();
   if (isMap && map) map.relayout();
 }
 
@@ -935,10 +941,21 @@ async function doSubmitStockReport(photoFile) {
     await db.from('stock_reports').delete().in('id', toDelete);
   }
 
+  // 알림 전송
+  const sentReportType = pendingReportType;
+  const sentStore = { ...currentStore };
+
   document.getElementById('stock-photo-modal').classList.add('hidden');
   pendingReportType = null;
   loadStockReports(storeId);
   showToast();
+
+  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+  fetch('/api/push-send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ store: sentStore, reportType: sentReportType, favorites })
+  }).catch(() => {});
 }
 
 // ── 판매처 제보 ───────────────────────────────────────────
@@ -1046,4 +1063,80 @@ async function submitStoreReport() {
 
   document.getElementById('store-report-modal').classList.add('hidden');
   showToast('제보해주셔서 감사합니다!');
+}
+
+// ── 알림 ────────────────────────────────────────────────
+
+const NOTI_LOG_KEY = 'notiLog';
+
+function getNotiLog() {
+  try { return JSON.parse(localStorage.getItem(NOTI_LOG_KEY) || '[]'); } catch { return []; }
+}
+
+function addNotiLog(entry) {
+  const log = getNotiLog();
+  log.unshift(entry);
+  if (log.length > 50) log.splice(50);
+  localStorage.setItem(NOTI_LOG_KEY, JSON.stringify(log));
+}
+
+function updateNotiGpsLocation(lat, lng) {
+  navigator.serviceWorker?.ready.then(async reg => {
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: sub.endpoint,
+        p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))),
+        auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
+        lastLat: lat,
+        lastLng: lng
+      })
+    }).catch(() => {});
+  });
+}
+
+function renderNotiLogView() {
+  const contentEl = document.getElementById('list-content');
+  const titleEl = document.getElementById('list-title');
+  const log = getNotiLog();
+  titleEl.textContent = '알림 모음';
+  if (!log.length) {
+    contentEl.innerHTML = '<p class="list-empty">받은 알림이 없어요.</p>';
+    return;
+  }
+  contentEl.innerHTML = log.map(n => {
+    const reportNames = { available: '있어요', low_stock: '마지막 몇 개', batch: '모아서 알림' };
+    const timeStr = new Date(n.time).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'numeric', minute:'numeric' });
+    return `<div class="list-store-card" onclick="onListCardClick(${n.storeId || 0})">
+      <div class="list-store-name-row">
+        <span class="list-store-name">${n.title}</span>
+        <span class="list-store-dist" style="font-size:11px">${timeStr}</span>
+      </div>
+      <p class="list-store-address">${n.body}</p>
+    </div>`;
+  }).join('');
+}
+
+function initServiceWorkerMessages() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data?.type === 'push-received') {
+      addNotiLog({ ...e.data.payload, time: Date.now() });
+    }
+    if (e.data?.type === 'notification-click') {
+      switchTab('notifications');
+    }
+  });
+}
+
+// URL 파라미터로 알림 탭 직접 열기
+function checkNotificationTabParam() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('tab') === 'notifications') {
+    history.replaceState(null, '', '/');
+    switchTab('notifications');
+  }
 }

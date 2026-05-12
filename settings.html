@@ -55,6 +55,14 @@
       </div>
       <div id="preset-list"></div>
     </div>
+
+    <div class="settings-section">
+      <div class="section-header">
+        <div class="section-title">알림</div>
+        <button id="add-noti-preset-btn">+ 추가</button>
+      </div>
+      <div id="noti-preset-list"></div>
+    </div>
   </div>
 
   <!-- View 2: 프리셋 편집 -->
@@ -140,6 +148,118 @@
     </div>
   </div>
 
+  <!-- View 4: 알림 프리셋 편집 -->
+  <div id="noti-edit-view" class="hidden">
+    <div class="page-header">
+      <button class="back-btn" onclick="backFromNotiEdit()">←</button>
+      <input type="text" id="noti-preset-name-input" placeholder="알림 이름">
+      <button onclick="saveNotiPreset()">저장</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-item">
+        <span>알림 사용</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="noti-enabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">위치</div>
+      <div class="settings-item" style="cursor:pointer" onclick="setNotiLocationType('gps')" id="noti-loc-gps-row">
+        <div>
+          <div>현재 내 위치</div>
+          <div style="font-size:12px;color:#aaa">마지막으로 앱을 켠 위치 기준</div>
+        </div>
+        <span id="noti-loc-gps-check">✓</span>
+      </div>
+      <div class="settings-item" style="cursor:pointer" onclick="setNotiLocationType('fixed')" id="noti-loc-fixed-row">
+        <div>
+          <div>직접 지정</div>
+          <div id="noti-loc-fixed-address" style="font-size:12px;color:#aaa">위치를 선택해주세요</div>
+        </div>
+        <span id="noti-loc-fixed-check" style="display:none">✓</span>
+      </div>
+      <div id="noti-map-picker-btn-wrap" class="hidden" style="padding:8px 16px">
+        <button onclick="openNotiMapPicker()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:14px;cursor:pointer">📍 지도에서 위치 선택</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">반경</div>
+      <div class="settings-item">
+        <div class="chip-group" id="noti-radius-chips">
+          <button class="chip" data-value="500">500m</button>
+          <button class="chip active" data-value="1000">1km</button>
+          <button class="chip" data-value="3000">3km</button>
+          <button class="chip" data-value="5000">5km</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">가게 종류</div>
+      <div class="settings-item">
+        <div class="chip-group" id="noti-type-chips">
+          <button class="chip active" data-value="all">전체</button>
+          <button class="chip" data-value="자판기">자판기</button>
+          <button class="chip" data-value="편의점">편의점</button>
+          <button class="chip" data-value="문방구">문방구</button>
+          <button class="chip" data-value="카드샵">카드샵</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">재고 상태</div>
+      <div class="settings-item">
+        <div class="chip-group" id="noti-report-chips">
+          <button class="chip active" data-value="available">있어요</button>
+          <button class="chip active" data-value="low_stock">마지막 몇 개</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-item">
+        <span>찜한 가게만</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="noti-fav-only">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">알림 시간대</div>
+      <div class="settings-item">
+        <span>시작</span>
+        <input type="time" id="noti-time-start" value="09:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+      </div>
+      <div class="settings-item">
+        <span>종료</span>
+        <input type="time" id="noti-time-end" value="22:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+      </div>
+      <div style="padding:8px 16px;font-size:12px;color:#aaa">시간대 밖 제보는 시작 시각에 모아서 알림으로 전송돼요</div>
+    </div>
+  </div>
+
+  <!-- 알림 위치 지도 picker -->
+  <div id="noti-map-picker" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;display:flex;flex-direction:column">
+    <div id="noti-map-picker-map" style="flex:1;position:relative">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);font-size:28px;z-index:1;pointer-events:none">📍</div>
+    </div>
+    <div style="background:white;padding:16px;box-shadow:0 -2px 8px rgba(0,0,0,0.1)">
+      <p id="noti-picker-address" style="font-size:14px;color:#555;margin-bottom:12px">위치를 선택해주세요</p>
+      <div style="display:flex;gap:8px">
+        <button onclick="cancelNotiMapPicker()" style="flex:1;padding:12px;border:1.5px solid #ddd;border-radius:10px;background:white;font-size:14px;cursor:pointer">취소</button>
+        <button onclick="confirmNotiMapPicker()" style="flex:2;padding:12px;border:none;border-radius:10px;background:#e53935;color:white;font-size:14px;font-weight:600;cursor:pointer">여기로 설정</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 미저장 확인 모달 -->
   <div id="unsaved-modal" class="unsaved-modal hidden">
     <div class="unsaved-box">
@@ -153,6 +273,7 @@
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=cf6b8c5a31ab27835ad75b58e202f3ea&libraries=services"></script>
   <script src="settings.js"></script>
 </body>
 </html>

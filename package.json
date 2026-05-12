@@ -1,5 +1,9 @@
 {
   "scripts": {
     "build": "bash build.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "web-push": "^3.6.7"
   }
 }

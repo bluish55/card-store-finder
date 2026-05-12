@@ -544,11 +544,279 @@ function initLocationToggle() {
   });
 }
 
+// ─── 알림 프리셋 ─────────────────────────────────────────
+
+const NOTI_KEY = 'notiPresets';
+let currentNotiPresetId = null;
+let notiLocType = 'gps';
+let notiFixedLat = null;
+let notiFixedLng = null;
+let notiFixedAddress = '';
+let notiPickerMap = null;
+let notiPickerLat = null;
+let notiPickerLng = null;
+
+function getNotiPresets() {
+  try { return JSON.parse(localStorage.getItem(NOTI_KEY) || '[]'); } catch { return []; }
+}
+
+function saveNotiPresets(presets) {
+  localStorage.setItem(NOTI_KEY, JSON.stringify(presets));
+}
+
+function renderNotiPresetList() {
+  const presets = getNotiPresets();
+  const el = document.getElementById('noti-preset-list');
+  if (!presets.length) {
+    el.innerHTML = '<div style="padding:12px 16px;font-size:14px;color:#aaa">알림 프리셋이 없어요</div>';
+    return;
+  }
+  el.innerHTML = presets.map(p => `
+    <div class="settings-item" style="cursor:pointer" onclick="openNotiEdit('${p.id}')">
+      <div>
+        <div>${p.name || '이름 없음'}</div>
+        <div style="font-size:12px;color:#aaa">${p.location?.type === 'gps' ? '현재 내 위치' : p.location?.address || '직접 지정'} · ${p.radius >= 1000 ? p.radius/1000+'km' : p.radius+'m'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="toggle-switch" onclick="event.stopPropagation()">
+          <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="toggleNotiPreset('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="color:#aaa">›</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleNotiPreset(id, enabled) {
+  const presets = getNotiPresets();
+  const p = presets.find(x => x.id === id);
+  if (p) { p.enabled = enabled; saveNotiPresets(presets); syncNotiSubscription(); }
+}
+
+function openNotiEdit(id) {
+  const presets = getNotiPresets();
+  const p = presets.find(x => x.id === id) || null;
+  currentNotiPresetId = id;
+
+  document.getElementById('noti-preset-name-input').value = p?.name || '';
+  document.getElementById('noti-enabled').checked = p?.enabled !== false;
+  document.getElementById('noti-fav-only').checked = p?.favOnly || false;
+  document.getElementById('noti-time-start').value = p?.timeRange?.start || '09:00';
+  document.getElementById('noti-time-end').value = p?.timeRange?.end || '22:00';
+
+  notiLocType = p?.location?.type || 'gps';
+  notiFixedLat = p?.location?.lat || null;
+  notiFixedLng = p?.location?.lng || null;
+  notiFixedAddress = p?.location?.address || '';
+  updateNotiLocUI();
+
+  // 반경 칩
+  const radius = p?.radius || 1000;
+  document.querySelectorAll('#noti-radius-chips .chip').forEach(btn => {
+    btn.classList.toggle('active', Number(btn.dataset.value) === radius);
+  });
+
+  // 가게 종류 칩
+  const types = p?.types || [];
+  document.querySelectorAll('#noti-type-chips .chip').forEach(btn => {
+    if (btn.dataset.value === 'all') btn.classList.toggle('active', !types.length);
+    else btn.classList.toggle('active', types.includes(btn.dataset.value));
+  });
+
+  // 재고 상태 칩
+  const reportTypes = p?.reportTypes || ['available', 'low_stock'];
+  document.querySelectorAll('#noti-report-chips .chip').forEach(btn => {
+    btn.classList.toggle('active', reportTypes.includes(btn.dataset.value));
+  });
+
+  document.getElementById('main-view').classList.add('hidden');
+  document.getElementById('noti-edit-view').classList.remove('hidden');
+}
+
+function addNotiPreset() {
+  const presets = getNotiPresets();
+  const id = 'n' + Date.now();
+  presets.push({ id, name: '새 알림', enabled: true, location: { type: 'gps' }, radius: 1000, types: [], reportTypes: ['available', 'low_stock'], favOnly: false, timeRange: { start: '09:00', end: '22:00' } });
+  saveNotiPresets(presets);
+  renderNotiPresetList();
+  openNotiEdit(id);
+}
+
+function saveNotiPreset() {
+  const presets = getNotiPresets();
+  const idx = presets.findIndex(x => x.id === currentNotiPresetId);
+  if (idx === -1) return;
+
+  const types = [...document.querySelectorAll('#noti-type-chips .chip.active')]
+    .map(b => b.dataset.value).filter(v => v !== 'all');
+  const reportTypes = [...document.querySelectorAll('#noti-report-chips .chip.active')]
+    .map(b => b.dataset.value);
+  const radius = Number(document.querySelector('#noti-radius-chips .chip.active')?.dataset.value || 1000);
+
+  const location = notiLocType === 'gps'
+    ? { type: 'gps' }
+    : { type: 'fixed', lat: notiFixedLat, lng: notiFixedLng, address: notiFixedAddress };
+
+  presets[idx] = {
+    ...presets[idx],
+    name: document.getElementById('noti-preset-name-input').value || '이름 없음',
+    enabled: document.getElementById('noti-enabled').checked,
+    location,
+    radius,
+    types,
+    reportTypes,
+    favOnly: document.getElementById('noti-fav-only').checked,
+    timeRange: {
+      start: document.getElementById('noti-time-start').value,
+      end: document.getElementById('noti-time-end').value
+    }
+  };
+
+  saveNotiPresets(presets);
+  syncNotiSubscription();
+  backFromNotiEdit();
+}
+
+function backFromNotiEdit() {
+  document.getElementById('noti-edit-view').classList.add('hidden');
+  document.getElementById('main-view').classList.remove('hidden');
+  renderNotiPresetList();
+}
+
+function setNotiLocationType(type) {
+  notiLocType = type;
+  updateNotiLocUI();
+}
+
+function updateNotiLocUI() {
+  const isGps = notiLocType === 'gps';
+  document.getElementById('noti-loc-gps-check').style.display = isGps ? '' : 'none';
+  document.getElementById('noti-loc-fixed-check').style.display = isGps ? 'none' : '';
+  document.getElementById('noti-map-picker-btn-wrap').classList.toggle('hidden', isGps);
+  document.getElementById('noti-loc-fixed-address').textContent = notiFixedAddress || '위치를 선택해주세요';
+}
+
+function openNotiMapPicker() {
+  document.getElementById('noti-edit-view').classList.add('hidden');
+  document.getElementById('noti-map-picker').classList.remove('hidden');
+  document.getElementById('noti-map-picker').style.display = 'flex';
+
+  if (!notiPickerMap) {
+    const lat = notiFixedLat || 37.5447;
+    const lng = notiFixedLng || 127.0558;
+    notiPickerMap = new kakao.maps.Map(document.getElementById('noti-map-picker-map'), {
+      center: new kakao.maps.LatLng(lat, lng), level: 4
+    });
+    kakao.maps.event.addListener(notiPickerMap, 'drag', updateNotiPickerAddress);
+    kakao.maps.event.addListener(notiPickerMap, 'dragend', updateNotiPickerAddress);
+  } else if (notiFixedLat) {
+    notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
+  }
+  updateNotiPickerAddress();
+}
+
+function updateNotiPickerAddress() {
+  const center = notiPickerMap.getCenter();
+  notiPickerLat = center.getLat();
+  notiPickerLng = center.getLng();
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.coord2Address(notiPickerLng, notiPickerLat, (result, status) => {
+    if (status === kakao.maps.services.Status.OK) {
+      document.getElementById('noti-picker-address').textContent =
+        result[0].road_address?.address_name || result[0].address?.address_name || '';
+    }
+  });
+}
+
+function confirmNotiMapPicker() {
+  notiFixedLat = notiPickerLat;
+  notiFixedLng = notiPickerLng;
+  notiFixedAddress = document.getElementById('noti-picker-address').textContent;
+  document.getElementById('noti-loc-fixed-address').textContent = notiFixedAddress;
+  cancelNotiMapPicker();
+}
+
+function cancelNotiMapPicker() {
+  document.getElementById('noti-map-picker').classList.add('hidden');
+  document.getElementById('noti-map-picker').style.display = 'none';
+  document.getElementById('noti-edit-view').classList.remove('hidden');
+}
+
+function initNotiChips() {
+  document.querySelectorAll('#noti-radius-chips .chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#noti-radius-chips .chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('#noti-type-chips .chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.value === 'all') {
+        document.querySelectorAll('#noti-type-chips .chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      } else {
+        document.querySelector('#noti-type-chips .chip[data-value="all"]').classList.remove('active');
+        btn.classList.toggle('active');
+      }
+    });
+  });
+
+  document.querySelectorAll('#noti-report-chips .chip').forEach(btn => {
+    btn.addEventListener('click', () => btn.classList.toggle('active'));
+  });
+}
+
+async function syncNotiSubscription() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return;
+
+  const presets = getNotiPresets();
+  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+  await fetch('/api/push-subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      endpoint: sub.endpoint,
+      p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))),
+      auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
+      conditions: { presets, favorites }
+    })
+  });
+}
+
+async function requestNotiPermission() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('이 브라우저는 알림을 지원하지 않아요.');
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') { alert('알림 권한이 필요해요.'); return; }
+
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: CONFIG.vapidPublicKey
+    });
+  }
+  await syncNotiSubscription();
+  alert('알림이 설정됐어요!');
+}
+
 // ─── 초기화 ──────────────────────────────────────────────
 
 window.addEventListener('load', () => {
   initAuth();
   initLocationToggle();
   document.getElementById('add-preset-btn').addEventListener('click', addPreset);
+  document.getElementById('add-noti-preset-btn').addEventListener('click', addNotiPreset);
+  initNotiChips();
+  renderNotiPresetList();
   showMainView();
 });

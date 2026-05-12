@@ -478,3 +478,26 @@ button {
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
 }
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: #e53935;
+  color: white;
+  border-color: #e53935;
+}
