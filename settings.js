@@ -762,6 +762,7 @@ function openNotiMapPicker() {
     kakao.maps.event.addListener(notiPickerMap, 'drag', updateNotiPickerAddress);
     kakao.maps.event.addListener(notiPickerMap, 'dragend', updateNotiPickerAddress);
     loadNotiPickerStores();
+    initNotiPickerSearch();
   } else if (notiFixedLat) {
     notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
   }
@@ -809,33 +810,37 @@ function initNotiPickerSearch() {
   const input = document.getElementById('noti-picker-search');
   const dropdown = document.getElementById('noti-picker-dropdown');
   let debounceTimer;
+  const ps = new kakao.maps.services.Places();
 
   input.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     const q = input.value.trim();
     if (q.length < 2) { dropdown.classList.add('hidden'); return; }
-    debounceTimer = setTimeout(async () => {
-      const res = await fetch(`/api/keyword?query=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      const places = data.documents?.slice(0, 5) || [];
-      if (!places.length) { dropdown.classList.add('hidden'); return; }
-      dropdown.innerHTML = places.map((p, i) =>
-        `<div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px" data-i="${i}">
-          <div style="font-weight:500">${p.place_name}</div>
-          <div style="font-size:12px;color:#aaa">${p.address_name}</div>
-        </div>`
-      ).join('');
-      dropdown.querySelectorAll('div[data-i]').forEach((el, i) => {
-        el.addEventListener('click', () => {
-          const p = places[i];
-          notiPickerMap.setCenter(new kakao.maps.LatLng(p.y, p.x));
-          notiPickerMap.setLevel(4);
-          input.value = p.place_name;
+    debounceTimer = setTimeout(() => {
+      ps.keywordSearch(q, (result, status) => {
+        if (status !== kakao.maps.services.Status.OK || !result.length) {
           dropdown.classList.add('hidden');
-          updateNotiPickerAddress();
+          return;
+        }
+        const places = result.slice(0, 5);
+        dropdown.innerHTML = places.map((p, i) =>
+          `<div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px" data-i="${i}">
+            <div style="font-weight:500;color:#333">${p.place_name}</div>
+            <div style="font-size:12px;color:#aaa">${p.address_name}</div>
+          </div>`
+        ).join('');
+        dropdown.querySelectorAll('div[data-i]').forEach((el, i) => {
+          el.addEventListener('click', () => {
+            notiPickerMap.setCenter(new kakao.maps.LatLng(places[i].y, places[i].x));
+            notiPickerMap.setLevel(4);
+            input.value = places[i].place_name;
+            dropdown.classList.add('hidden');
+            updateNotiPickerAddress();
+            if (notiPickerRadiusVisible) updateNotiPickerCircle();
+          });
         });
+        dropdown.classList.remove('hidden');
       });
-      dropdown.classList.remove('hidden');
     }, 300);
   });
 
