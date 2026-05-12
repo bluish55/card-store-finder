@@ -280,6 +280,7 @@ function showPanel(store) {
   document.getElementById('navi-btn').href =
     `https://map.kakao.com/link/to/${encodeURIComponent(store.name)},${store.lat},${store.lng}`;
   updateFavBtn(store.id);
+  updateStoreNotiBtn(store.id);
   const distEl = document.getElementById('store-distance');
   if (userLat !== null && userLng !== null) {
     distEl.textContent = calcDistance(userLat, userLng, store.lat, store.lng);
@@ -1070,6 +1071,58 @@ async function submitStoreReport() {
 
   document.getElementById('store-report-modal').classList.add('hidden');
   showToast('제보해주셔서 감사합니다!');
+}
+
+// ── 단일 가게 알림 ────────────────────────────────────────
+
+function getStoreNotiList() {
+  try { return JSON.parse(localStorage.getItem('storeNotiList') || '[]'); } catch { return []; }
+}
+
+function isStoreNotiEnabled(storeId) {
+  return getStoreNotiList().some(n => n.storeId === storeId && n.enabled !== false);
+}
+
+function updateStoreNotiBtn(storeId) {
+  const btn = document.getElementById('store-noti-btn');
+  if (!btn) return;
+  const on = isStoreNotiEnabled(storeId);
+  btn.textContent = on ? '🔔' : '🔕';
+  btn.classList.toggle('active', on);
+}
+
+function toggleStoreNoti() {
+  if (!currentStore) return;
+  const list = getStoreNotiList();
+  const idx = list.findIndex(n => n.storeId === currentStore.id);
+  if (idx !== -1) {
+    list.splice(idx, 1);
+  } else {
+    list.push({ storeId: currentStore.id, storeName: currentStore.name, storeAddress: currentStore.address, enabled: true, addedAt: Date.now() });
+  }
+  localStorage.setItem('storeNotiList', JSON.stringify(list));
+  updateStoreNotiBtn(currentStore.id);
+  syncAllPushConditions();
+}
+
+function syncAllPushConditions() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(async reg => {
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    const presets = JSON.parse(localStorage.getItem('notiPresets') || '[]');
+    const storeNotiList = getStoreNotiList();
+    fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: sub.endpoint,
+        p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))),
+        auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
+        conditions: { presets, favorites: getFavorites(), storeNotiList }
+      })
+    }).catch(() => {});
+  });
 }
 
 // ── 알림 ────────────────────────────────────────────────

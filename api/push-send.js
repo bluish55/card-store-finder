@@ -110,6 +110,29 @@ module.exports = async function handler(req, res) {
         break;
       }
     }
+
+    // 단일 가게 알림 체크 (프리셋 미매칭 시)
+    if (!matched && ['available', 'low_stock'].includes(reportType)) {
+      const storeNotiList = sub.conditions?.storeNotiList || [];
+      const storeNoti = storeNotiList.find(n => n.storeId == store.id && n.enabled !== false);
+      if (storeNoti) {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            JSON.stringify({
+              title: `📍 ${store.name}`,
+              body: `${reportTypeNames[reportType] || reportType} · ${store.address}`,
+              storeId: store.id
+            })
+          );
+          sent++;
+        } catch (e) {
+          if (e.statusCode === 410) {
+            await db.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+          }
+        }
+      }
+    }
   }
 
   if (pendingInserts.length) {

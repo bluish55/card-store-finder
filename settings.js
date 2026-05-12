@@ -556,6 +556,9 @@ let notiFixedAddress = '';
 let notiPickerMap = null;
 let notiPickerLat = null;
 let notiPickerLng = null;
+let notiPickerCircle = null;
+let notiPickerRadius = 1000;
+let notiPickerRadiusVisible = false;
 
 function getNotiPresets() {
   try { return JSON.parse(localStorage.getItem(NOTI_KEY) || '[]'); } catch { return []; }
@@ -765,6 +768,82 @@ function openNotiMapPicker() {
   updateNotiPickerAddress();
 }
 
+function toggleNotiPickerRadius() {
+  notiPickerRadiusVisible = !notiPickerRadiusVisible;
+  const chips = document.getElementById('noti-picker-radius-chips');
+  chips.style.display = notiPickerRadiusVisible ? 'flex' : 'none';
+  document.getElementById('noti-radius-toggle-btn').style.background = notiPickerRadiusVisible ? '#e53935' : 'white';
+  document.getElementById('noti-radius-toggle-btn').style.color = notiPickerRadiusVisible ? 'white' : '';
+  updateNotiPickerCircle();
+}
+
+function setNotiPickerRadius(r) {
+  notiPickerRadius = r;
+  document.querySelectorAll('.picker-radius-chip').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.value) === r);
+  });
+  // 반경 설정 프리셋 칩도 동기화
+  document.querySelectorAll('#noti-radius-chips .chip').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.value) === r);
+  });
+  updateNotiPickerCircle();
+}
+
+function updateNotiPickerCircle() {
+  if (notiPickerCircle) { notiPickerCircle.setMap(null); notiPickerCircle = null; }
+  if (!notiPickerRadiusVisible || !notiPickerMap) return;
+  const center = notiPickerMap.getCenter();
+  notiPickerCircle = new kakao.maps.Circle({
+    map: notiPickerMap,
+    center,
+    radius: notiPickerRadius,
+    strokeWeight: 2,
+    strokeColor: '#e53935',
+    strokeOpacity: 0.8,
+    fillColor: '#e53935',
+    fillOpacity: 0.1
+  });
+}
+
+function initNotiPickerSearch() {
+  const input = document.getElementById('noti-picker-search');
+  const dropdown = document.getElementById('noti-picker-dropdown');
+  let debounceTimer;
+
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { dropdown.classList.add('hidden'); return; }
+    debounceTimer = setTimeout(async () => {
+      const res = await fetch(`/api/keyword?query=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      const places = data.documents?.slice(0, 5) || [];
+      if (!places.length) { dropdown.classList.add('hidden'); return; }
+      dropdown.innerHTML = places.map((p, i) =>
+        `<div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px" data-i="${i}">
+          <div style="font-weight:500">${p.place_name}</div>
+          <div style="font-size:12px;color:#aaa">${p.address_name}</div>
+        </div>`
+      ).join('');
+      dropdown.querySelectorAll('div[data-i]').forEach((el, i) => {
+        el.addEventListener('click', () => {
+          const p = places[i];
+          notiPickerMap.setCenter(new kakao.maps.LatLng(p.y, p.x));
+          notiPickerMap.setLevel(4);
+          input.value = p.place_name;
+          dropdown.classList.add('hidden');
+          updateNotiPickerAddress();
+        });
+      });
+      dropdown.classList.remove('hidden');
+    }, 300);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { dropdown.classList.add('hidden'); input.blur(); }
+  });
+}
+
 async function loadNotiPickerStores() {
   const { data } = await db.from('stores').select('id, name, lat, lng, type');
   if (!data) return;
@@ -834,6 +913,46 @@ function initNotiChips() {
   });
 }
 
+// ─── 단일 가게 알림 ──────────────────────────────────────
+
+function renderStoreNotiList() {
+  const el = document.getElementById('store-noti-list');
+  if (!el) return;
+  const list = JSON.parse(localStorage.getItem('storeNotiList') || '[]');
+  if (!list.length) { el.innerHTML = ''; return; }
+  list.sort((a, b) => a.addedAt - b.addedAt);
+  el.innerHTML = list.map(n => `
+    <div class="settings-item" style="cursor:default">
+      <div>
+        <div style="font-size:12px;color:#e53935;font-weight:600;margin-bottom:2px">가게 알림</div>
+        <div>${n.storeName}</div>
+        <div style="font-size:12px;color:#aaa">${n.storeAddress}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="toggle-switch" onclick="event.stopPropagation()">
+          <input type="checkbox" ${n.enabled !== false ? 'checked' : ''} onchange="toggleStoreNotiItem(${JSON.stringify(n.storeId)}, this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="btn-delete" onclick="deleteStoreNoti(${JSON.stringify(n.storeId)})">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleStoreNotiItem(storeId, enabled) {
+  const list = JSON.parse(localStorage.getItem('storeNotiList') || '[]');
+  const item = list.find(n => n.storeId == storeId);
+  if (item) { item.enabled = enabled; localStorage.setItem('storeNotiList', JSON.stringify(list)); syncNotiSubscription(); }
+}
+
+function deleteStoreNoti(storeId) {
+  if (!confirm('이 알림을 삭제할까요?')) return;
+  const list = JSON.parse(localStorage.getItem('storeNotiList') || '[]').filter(n => n.storeId != storeId);
+  localStorage.setItem('storeNotiList', JSON.stringify(list));
+  syncNotiSubscription();
+  renderStoreNotiList();
+}
+
 async function syncNotiSubscription() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   const reg = await navigator.serviceWorker.ready;
@@ -842,6 +961,7 @@ async function syncNotiSubscription() {
 
   const presets = getNotiPresets();
   const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+  const storeNotiList = JSON.parse(localStorage.getItem('storeNotiList') || '[]');
 
   await fetch('/api/push-subscribe', {
     method: 'POST',
@@ -850,7 +970,7 @@ async function syncNotiSubscription() {
       endpoint: sub.endpoint,
       p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))),
       auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
-      conditions: { presets, favorites }
+      conditions: { presets, favorites, storeNotiList }
     })
   });
 }
@@ -884,5 +1004,6 @@ window.addEventListener('load', () => {
   document.getElementById('add-noti-preset-btn').addEventListener('click', addNotiPreset);
   initNotiChips();
   renderNotiPresetList();
+  renderStoreNotiList();
   showMainView();
 });
