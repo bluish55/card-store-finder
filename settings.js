@@ -606,12 +606,12 @@ function toggleNotiPreset(id, enabled) {
   if (p) { p.enabled = enabled; saveNotiPresets(presets); syncNotiSubscription(); }
 }
 
-function openNotiEdit(id) {
+function openNotiEdit(id, defaultName = '') {
   const presets = getNotiPresets();
   const p = presets.find(x => x.id === id) || null;
   currentNotiPresetId = id;
 
-  document.getElementById('noti-preset-name-input').value = p?.name || '';
+  document.getElementById('noti-preset-name-input').value = p?.name || defaultName;
   document.getElementById('noti-enabled').checked = p?.enabled !== false;
   document.getElementById('noti-fav-only').checked = p?.favOnly || false;
   const timeEnabled = !!p?.timeRange;
@@ -653,7 +653,11 @@ function openNotiEdit(id) {
 function addNotiPreset() {
   isNewNotiPreset = true;
   const id = 'n' + Date.now();
-  openNotiEdit(id);
+  const presets = getNotiPresets();
+  const names = presets.map(p => p.name);
+  let num = 1;
+  while (names.includes(`알림${num}`)) num++;
+  openNotiEdit(id, `알림${num}`);
 }
 
 function saveNotiPreset() {
