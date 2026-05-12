@@ -1,4 +1,37 @@
 const STORAGE_KEY = 'pinPresets';
+let db;
+
+// ─── 로그인 ──────────────────────────────────────────────
+
+function initAuth() {
+  db = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
+  db.auth.getSession().then(({ data: { session } }) => renderAuthSection(session));
+  db.auth.onAuthStateChange((_event, session) => renderAuthSection(session));
+}
+
+function renderAuthSection(session) {
+  const loginPrompt = document.getElementById('login-prompt');
+  const profileSection = document.getElementById('profile-section');
+  if (session) {
+    loginPrompt.classList.add('hidden');
+    profileSection.classList.remove('hidden');
+    const user = session.user;
+    const avatar = document.getElementById('profile-avatar');
+    const name = document.getElementById('profile-name');
+    if (user.user_metadata?.avatar_url) {
+      avatar.src = user.user_metadata.avatar_url;
+      avatar.classList.remove('hidden');
+    }
+    name.textContent = user.user_metadata?.full_name || user.user_metadata?.name || user.email || '';
+  } else {
+    loginPrompt.classList.remove('hidden');
+    profileSection.classList.add('hidden');
+  }
+}
+
+async function signOut() {
+  await db.auth.signOut();
+}
 let currentPresetId = null;
 let currentRuleId = null;
 let currentPinType = 'color';
@@ -514,6 +547,7 @@ function initLocationToggle() {
 // ─── 초기화 ──────────────────────────────────────────────
 
 window.addEventListener('load', () => {
+  initAuth();
   initLocationToggle();
   document.getElementById('add-preset-btn').addEventListener('click', addPreset);
   showMainView();

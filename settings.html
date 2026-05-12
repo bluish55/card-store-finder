@@ -20,6 +20,24 @@
     </div>
 
     <div class="settings-section">
+      <div id="login-prompt" class="hidden">
+        <div class="settings-item" onclick="location.href='login.html'" style="cursor:pointer">
+          <span>로그인하기</span>
+          <span style="color:#aaa;font-size:13px">›</span>
+        </div>
+      </div>
+      <div id="profile-section" class="hidden">
+        <div class="settings-item">
+          <div style="display:flex;align-items:center;gap:10px">
+            <img id="profile-avatar" width="36" height="36" style="border-radius:50%;object-fit:cover" class="hidden">
+            <span id="profile-name"></span>
+          </div>
+          <button onclick="signOut()" style="font-size:13px;color:#e53935;background:none;border:none;cursor:pointer">로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="section-title">위치</div>
       <div class="settings-item">
         <span>내 위치 사용</span>
@@ -133,6 +151,8 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="settings.js"></script>
 </body>
 </html>
