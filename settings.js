@@ -556,7 +556,6 @@ let notiFixedAddress = '';
 let notiPickerMap = null;
 let notiPickerLat = null;
 let notiPickerLng = null;
-let notiPickerCircle = null;
 let notiPickerRadius = 1000;
 let notiPickerRadiusVisible = false;
 
@@ -749,6 +748,7 @@ function updateNotiLocUI() {
 }
 
 function openNotiPickerSearch() {
+  document.getElementById('noti-radius-control').style.visibility = 'hidden';
   document.getElementById('noti-picker-radius-chips').style.display = 'none';
   document.getElementById('noti-picker-search-btn').classList.add('hidden');
   document.getElementById('noti-picker-search-bar').classList.remove('hidden');
@@ -756,6 +756,7 @@ function openNotiPickerSearch() {
 }
 
 function closeNotiPickerSearch() {
+  document.getElementById('noti-radius-control').style.visibility = '';
   document.getElementById('noti-picker-search-bar').classList.add('hidden');
   document.getElementById('noti-picker-search-btn').classList.remove('hidden');
   document.getElementById('noti-picker-search').value = '';
@@ -774,8 +775,8 @@ function openNotiMapPicker() {
     notiPickerMap = new kakao.maps.Map(document.getElementById('noti-map-picker-map'), {
       center: new kakao.maps.LatLng(lat, lng), level: 4
     });
-    kakao.maps.event.addListener(notiPickerMap, 'drag', updateNotiPickerAddress);
     kakao.maps.event.addListener(notiPickerMap, 'dragend', updateNotiPickerAddress);
+    kakao.maps.event.addListener(notiPickerMap, 'zoom_changed', updateCssCircleSize);
     loadNotiPickerStores();
     initNotiPickerSearch();
     // 외부 클릭 시 반경 칩 닫기
@@ -788,31 +789,23 @@ function openNotiMapPicker() {
   } else if (notiFixedLat) {
     notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
   }
+  // 초기 상태 적용
+  document.getElementById('noti-radius-visible-toggle').checked = notiPickerRadiusVisible;
+  const initLabel = notiPickerRadius >= 1000 ? (notiPickerRadius / 1000) + 'km' : notiPickerRadius + 'm';
+  document.getElementById('noti-radius-size-btn').textContent = initLabel + ' ▾';
   updateNotiPickerAddress();
+  updateCssCircleSize();
 }
 
-function toggleNotiPickerRadius() {
-  const chipsEl = document.getElementById('noti-picker-radius-chips');
-  const chipsOpen = chipsEl.style.display === 'flex';
-  const btn = document.getElementById('noti-radius-toggle-btn');
+function onNotiRadiusToggle(checked) {
+  notiPickerRadiusVisible = checked;
+  if (!checked) document.getElementById('noti-picker-radius-chips').style.display = 'none';
+  updateCssCircleSize();
+}
 
-  if (!notiPickerRadiusVisible) {
-    // 원 꺼진 상태 → 켜기 + 칩 열기
-    notiPickerRadiusVisible = true;
-    chipsEl.style.display = 'flex';
-    btn.style.background = '#e53935';
-    btn.style.color = 'white';
-    updateNotiPickerCircle();
-  } else if (chipsOpen) {
-    // 원 켜짐 + 칩 열림 → 칩만 닫기
-    chipsEl.style.display = 'none';
-  } else {
-    // 원 켜짐 + 칩 닫힘 → 원 끄기
-    notiPickerRadiusVisible = false;
-    btn.style.background = 'white';
-    btn.style.color = '#333';
-    updateNotiPickerCircle();
-  }
+function toggleNotiPickerRadiusChips() {
+  const chips = document.getElementById('noti-picker-radius-chips');
+  chips.style.display = chips.style.display === 'flex' ? 'none' : 'flex';
 }
 
 function setNotiPickerRadius(r) {
@@ -824,31 +817,24 @@ function setNotiPickerRadius(r) {
     b.classList.toggle('active', Number(b.dataset.value) === r);
   });
   const label = r >= 1000 ? (r / 1000) + 'km' : r + 'm';
-  document.getElementById('noti-radius-toggle-btn').textContent = label;
+  document.getElementById('noti-radius-size-btn').textContent = label + ' ▾';
   document.getElementById('noti-picker-radius-chips').style.display = 'none';
-  updateNotiPickerCircle();
+  updateCssCircleSize();
 }
 
-function updateNotiPickerCircle() {
-  if (!notiPickerRadiusVisible || !notiPickerMap) {
-    if (notiPickerCircle) { notiPickerCircle.setMap(null); notiPickerCircle = null; }
-    return;
-  }
+function updateCssCircleSize() {
+  const el = document.getElementById('noti-picker-circle');
+  if (!el) return;
+  if (!notiPickerRadiusVisible || !notiPickerMap) { el.style.display = 'none'; return; }
   const center = notiPickerMap.getCenter();
-  if (notiPickerCircle) {
-    notiPickerCircle.setOptions({ center, radius: notiPickerRadius });
-  } else {
-    notiPickerCircle = new kakao.maps.Circle({
-      map: notiPickerMap,
-      center,
-      radius: notiPickerRadius,
-      strokeWeight: 2,
-      strokeColor: '#e53935',
-      strokeOpacity: 0.8,
-      fillColor: '#e53935',
-      fillOpacity: 0.1
-    });
-  }
+  const projection = notiPickerMap.getProjection();
+  const edgePt = new kakao.maps.LatLng(center.getLat() + notiPickerRadius / 111320, center.getLng());
+  const centerPx = projection.containerPointFromCoords(center);
+  const edgePx = projection.containerPointFromCoords(edgePt);
+  const radiusPx = Math.abs(edgePx.y - centerPx.y);
+  el.style.display = 'block';
+  el.style.width = (radiusPx * 2) + 'px';
+  el.style.height = (radiusPx * 2) + 'px';
 }
 
 function initNotiPickerSearch() {
@@ -879,7 +865,6 @@ function initNotiPickerSearch() {
             notiPickerMap.setCenter(new kakao.maps.LatLng(places[i].y, places[i].x));
             notiPickerMap.setLevel(4);
             updateNotiPickerAddress();
-            if (notiPickerRadiusVisible) updateNotiPickerCircle();
             closeNotiPickerSearch();
           });
         });
@@ -914,7 +899,6 @@ function updateNotiPickerAddress() {
   const center = notiPickerMap.getCenter();
   notiPickerLat = center.getLat();
   notiPickerLng = center.getLng();
-  if (notiPickerRadiusVisible) updateNotiPickerCircle();
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.coord2Address(notiPickerLng, notiPickerLat, (result, status) => {
     if (status === kakao.maps.services.Status.OK) {
