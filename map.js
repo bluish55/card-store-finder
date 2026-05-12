@@ -9,6 +9,7 @@ let activeType = 'all';
 let currentStore = null;
 let userLat = null;
 let userLng = null;
+let storesLoaded = false;
 
 function getFavorites() {
   return JSON.parse(localStorage.getItem('favorites') || '[]');
@@ -188,6 +189,7 @@ function saveStoresCache(stores, reportMap) {
 function applyStoresData(stores, reportMap) {
   allStores = stores;
   stockReportMap = reportMap;
+  storesLoaded = true;
   renderMarkers(allStores);
   if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
 }
@@ -707,6 +709,11 @@ function switchTab(tabName) {
 function renderListView() {
   const contentEl = document.getElementById('list-content');
   const titleEl = document.getElementById('list-title');
+
+  if (!storesLoaded) {
+    contentEl.innerHTML = '<div class="list-loading"><div class="list-spinner"></div><p>판매점 정보를 불러오는 중이에요</p></div>';
+    return;
+  }
 
   if (!userLat || !userLng) {
     titleEl.textContent = '주변 판매점';
