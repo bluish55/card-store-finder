@@ -108,6 +108,7 @@ function getCurrentLocation() {
       userLat = pos.coords.latitude;
       userLng = pos.coords.longitude;
       map.setCenter(new kakao.maps.LatLng(userLat, userLng));
+      if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
     },
     (err) => {
       if (err.code === err.PERMISSION_DENIED) {
