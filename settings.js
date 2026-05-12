@@ -140,13 +140,13 @@ function renderPresetList() {
 }
 
 function addPreset() {
-  const name = prompt('프리셋 이름을 입력해주세요');
-  if (!name || !name.trim()) return;
-
   const data = loadData();
+  let num = 1;
+  const names = data.presets.map(p => p.name);
+  while (names.includes(`설정${num}`)) num++;
   data.presets.push({
     id: data.nextId,
-    name: name.trim(),
+    name: `설정${num}`,
     nextRuleId: 1,
     rules: []
   });
@@ -550,6 +550,7 @@ const NOTI_KEY = 'notiPresets';
 let currentNotiPresetId = null;
 let notiLocType = 'gps';
 let notiFixedLat = null;
+let notiFormSnapshot = '';
 let notiFixedLng = null;
 let notiFixedAddress = '';
 let notiPickerMap = null;
@@ -582,10 +583,18 @@ function renderNotiPresetList() {
           <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="toggleNotiPreset('${p.id}', this.checked)">
           <span class="toggle-slider"></span>
         </label>
-        <span style="color:#aaa">›</span>
+        <button class="btn-delete" onclick="event.stopPropagation();deleteNotiPreset('${p.id}')">삭제</button>
       </div>
     </div>
   `).join('');
+}
+
+function deleteNotiPreset(id) {
+  if (!confirm('이 알림을 삭제할까요?')) return;
+  const presets = getNotiPresets().filter(p => p.id !== id);
+  saveNotiPresets(presets);
+  syncNotiSubscription();
+  renderNotiPresetList();
 }
 
 function toggleNotiPreset(id, enabled) {
@@ -635,6 +644,7 @@ function openNotiEdit(id) {
 
   document.getElementById('main-view').classList.add('hidden');
   document.getElementById('noti-edit-view').classList.remove('hidden');
+  setTimeout(() => { notiFormSnapshot = getNotiFormSnapshot(); }, 0);
 }
 
 function addNotiPreset() {
@@ -682,6 +692,17 @@ function saveNotiPreset() {
 }
 
 function backFromNotiEdit() {
+  if (getNotiFormSnapshot() !== notiFormSnapshot) {
+    showUnsavedModal(
+      () => saveNotiPreset(),
+      () => {
+        document.getElementById('noti-edit-view').classList.add('hidden');
+        document.getElementById('main-view').classList.remove('hidden');
+        renderNotiPresetList();
+      }
+    );
+    return;
+  }
   document.getElementById('noti-edit-view').classList.add('hidden');
   document.getElementById('main-view').classList.remove('hidden');
   renderNotiPresetList();
@@ -690,6 +711,23 @@ function backFromNotiEdit() {
 function setNotiLocationType(type) {
   notiLocType = type;
   updateNotiLocUI();
+}
+
+function getNotiFormSnapshot() {
+  return JSON.stringify({
+    name: document.getElementById('noti-preset-name-input').value,
+    enabled: document.getElementById('noti-enabled').checked,
+    favOnly: document.getElementById('noti-fav-only').checked,
+    timeEnabled: document.getElementById('noti-time-enabled').checked,
+    timeStart: document.getElementById('noti-time-start').value,
+    timeEnd: document.getElementById('noti-time-end').value,
+    locType: notiLocType,
+    fixedLat: notiFixedLat,
+    fixedLng: notiFixedLng,
+    radius: document.querySelector('#noti-radius-chips .chip.active')?.dataset.value,
+    types: [...document.querySelectorAll('#noti-type-chips .chip.active')].map(b => b.dataset.value).join(','),
+    reportTypes: [...document.querySelectorAll('#noti-report-chips .chip.active')].map(b => b.dataset.value).join(',')
+  });
 }
 
 function toggleNotiTimeRange(enabled) {
