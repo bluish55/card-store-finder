@@ -748,7 +748,21 @@ function updateNotiLocUI() {
   document.getElementById('noti-loc-fixed-address').textContent = notiFixedAddress || '위치를 선택해주세요';
 }
 
+function openNotiPickerSearch() {
+  document.getElementById('noti-picker-search-btn').classList.add('hidden');
+  document.getElementById('noti-picker-search-bar').classList.remove('hidden');
+  document.getElementById('noti-picker-search').focus();
+}
+
+function closeNotiPickerSearch() {
+  document.getElementById('noti-picker-search-bar').classList.add('hidden');
+  document.getElementById('noti-picker-search-btn').classList.remove('hidden');
+  document.getElementById('noti-picker-search').value = '';
+  document.getElementById('noti-picker-dropdown').classList.add('hidden');
+}
+
 function openNotiMapPicker() {
+  closeNotiPickerSearch();
   document.getElementById('noti-edit-view').classList.add('hidden');
   document.getElementById('noti-map-picker').classList.remove('hidden');
   document.getElementById('noti-map-picker').style.display = 'flex';
@@ -774,7 +788,7 @@ function toggleNotiPickerRadius() {
   const chips = document.getElementById('noti-picker-radius-chips');
   chips.style.display = notiPickerRadiusVisible ? 'flex' : 'none';
   document.getElementById('noti-radius-toggle-btn').style.background = notiPickerRadiusVisible ? '#e53935' : 'white';
-  document.getElementById('noti-radius-toggle-btn').style.color = notiPickerRadiusVisible ? 'white' : '';
+  document.getElementById('noti-radius-toggle-btn').style.color = notiPickerRadiusVisible ? 'white' : '#333';
   updateNotiPickerCircle();
 }
 
@@ -833,10 +847,9 @@ function initNotiPickerSearch() {
           el.addEventListener('click', () => {
             notiPickerMap.setCenter(new kakao.maps.LatLng(places[i].y, places[i].x));
             notiPickerMap.setLevel(4);
-            input.value = places[i].place_name;
-            dropdown.classList.add('hidden');
             updateNotiPickerAddress();
             if (notiPickerRadiusVisible) updateNotiPickerCircle();
+            closeNotiPickerSearch();
           });
         });
         dropdown.classList.remove('hidden');
