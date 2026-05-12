@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
   const { data: subs } = await db.from('push_subscriptions').select('*');
   if (!subs?.length) return res.json({ sent: 0 });
 
-  const reportTypeNames = { available: '있어요', low_stock: '마지막 몇 개' };
+  const reportTypeNames = { available: '있어요', low_stock: '마지막 몇 개', out_of_stock: '없어요' };
   let sent = 0;
   const pendingInserts = [];
 
