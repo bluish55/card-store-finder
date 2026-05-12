@@ -233,16 +233,24 @@
     </div>
 
     <div class="settings-section">
-      <div class="section-title">알림 시간대</div>
       <div class="settings-item">
-        <span>시작</span>
-        <input type="time" id="noti-time-start" value="09:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+        <span>알림 시간대 설정</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="noti-time-enabled" onchange="toggleNotiTimeRange(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-      <div class="settings-item">
-        <span>종료</span>
-        <input type="time" id="noti-time-end" value="22:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+      <div id="noti-time-range" class="hidden">
+        <div class="settings-item">
+          <span>시작</span>
+          <input type="time" id="noti-time-start" value="09:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+        </div>
+        <div class="settings-item">
+          <span>종료</span>
+          <input type="time" id="noti-time-end" value="22:00" style="border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:14px">
+        </div>
+        <div style="padding:8px 16px;font-size:12px;color:#aaa">시간대 밖 제보는 시작 시각에 모아서 알림으로 전송돼요</div>
       </div>
-      <div style="padding:8px 16px;font-size:12px;color:#aaa">시간대 밖 제보는 시작 시각에 모아서 알림으로 전송돼요</div>
     </div>
   </div>
 

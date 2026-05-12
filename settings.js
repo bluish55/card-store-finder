@@ -602,6 +602,9 @@ function openNotiEdit(id) {
   document.getElementById('noti-preset-name-input').value = p?.name || '';
   document.getElementById('noti-enabled').checked = p?.enabled !== false;
   document.getElementById('noti-fav-only').checked = p?.favOnly || false;
+  const timeEnabled = !!p?.timeRange;
+  document.getElementById('noti-time-enabled').checked = timeEnabled;
+  toggleNotiTimeRange(timeEnabled);
   document.getElementById('noti-time-start').value = p?.timeRange?.start || '09:00';
   document.getElementById('noti-time-end').value = p?.timeRange?.end || '22:00';
 
@@ -667,10 +670,10 @@ function saveNotiPreset() {
     types,
     reportTypes,
     favOnly: document.getElementById('noti-fav-only').checked,
-    timeRange: {
+    timeRange: document.getElementById('noti-time-enabled').checked ? {
       start: document.getElementById('noti-time-start').value,
       end: document.getElementById('noti-time-end').value
-    }
+    } : null
   };
 
   saveNotiPresets(presets);
@@ -687,6 +690,10 @@ function backFromNotiEdit() {
 function setNotiLocationType(type) {
   notiLocType = type;
   updateNotiLocUI();
+}
+
+function toggleNotiTimeRange(enabled) {
+  document.getElementById('noti-time-range').classList.toggle('hidden', !enabled);
 }
 
 function updateNotiLocUI() {
