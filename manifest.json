@@ -1,7 +1,7 @@
 {
-  "name": "포켓몬카드 판매점 지도",
-  "short_name": "포켓몬카드",
-  "description": "주변 포켓몬카드 판매점을 찾아보세요",
+  "name": "TCG Map",
+  "short_name": "TCG Map",
+  "description": "주변 TCG 카드 판매점을 찾아보세요",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
