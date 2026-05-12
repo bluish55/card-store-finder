@@ -688,7 +688,10 @@ function saveNotiPreset() {
 
   saveNotiPresets(presets);
   syncNotiSubscription();
-  backFromNotiEdit();
+  notiFormSnapshot = getNotiFormSnapshot(); // 저장 후 스냅샷 업데이트 (자동 저장 버그 방지)
+  document.getElementById('noti-edit-view').classList.add('hidden');
+  document.getElementById('main-view').classList.remove('hidden');
+  renderNotiPresetList();
 }
 
 function backFromNotiEdit() {
@@ -755,10 +758,28 @@ function openNotiMapPicker() {
     });
     kakao.maps.event.addListener(notiPickerMap, 'drag', updateNotiPickerAddress);
     kakao.maps.event.addListener(notiPickerMap, 'dragend', updateNotiPickerAddress);
+    loadNotiPickerStores();
   } else if (notiFixedLat) {
     notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
   }
   updateNotiPickerAddress();
+}
+
+async function loadNotiPickerStores() {
+  const { data } = await db.from('stores').select('id, name, lat, lng, type');
+  if (!data) return;
+  data.forEach(s => {
+    const colors = { '자판기': '#9c27b0', '편의점': '#1976d2', '문방구': '#f57c00', '카드샵': '#388e3c' };
+    const color = colors[s.type] || '#e53935';
+    const el = document.createElement('div');
+    el.style.cssText = `width:10px;height:10px;border-radius:50%;background:${color};border:1.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);`;
+    new kakao.maps.CustomOverlay({
+      map: notiPickerMap,
+      position: new kakao.maps.LatLng(s.lat, s.lng),
+      content: el,
+      zIndex: 1
+    });
+  });
 }
 
 function updateNotiPickerAddress() {
