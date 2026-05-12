@@ -299,6 +299,15 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeType = btn.dataset.type;
+
+    if (activeType === 'notifications') {
+      renderNotiLogView();
+      return;
+    }
+
+    // 알림 모음에서 다른 필터로 전환 시 리스트 다시 표시
+    renderListView();
+
     let filtered;
     if (activeType === 'all') filtered = allStores;
     else if (activeType === '찜') filtered = allStores.filter(s => isFavorite(s.id));
@@ -710,11 +719,9 @@ function switchTab(tabName) {
   const isMap = tabName === 'map';
   document.getElementById('top-row').classList.toggle('hidden', !isMap);
   document.getElementById('location-btn').classList.toggle('hidden', !isMap);
-  const isListLike = tabName === 'list' || tabName === 'notifications';
-  document.getElementById('list-view').classList.toggle('hidden', !isListLike);
+  document.getElementById('list-view').classList.toggle('hidden', tabName !== 'list');
 
   if (tabName === 'list') renderListView();
-  if (tabName === 'notifications') renderNotiLogView();
   if (isMap && map) map.relayout();
 }
 
@@ -1127,7 +1134,11 @@ function initServiceWorkerMessages() {
       addNotiLog({ ...e.data.payload, time: Date.now() });
     }
     if (e.data?.type === 'notification-click') {
-      switchTab('notifications');
+      switchTab('list');
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.filter-btn[data-type="notifications"]').classList.add('active');
+      activeType = 'notifications';
+      renderNotiLogView();
     }
   });
 }
@@ -1137,6 +1148,10 @@ function checkNotificationTabParam() {
   const params = new URLSearchParams(location.search);
   if (params.get('tab') === 'notifications') {
     history.replaceState(null, '', '/');
-    switchTab('notifications');
+    switchTab('list');
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.filter-btn[data-type="notifications"]').classList.add('active');
+    activeType = 'notifications';
+    renderNotiLogView();
   }
 }
