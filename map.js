@@ -477,8 +477,13 @@ document.getElementById('fav-btn').addEventListener('click', () => {
   // 설정에서 돌아올 때 핀 재렌더
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && allStores.length) {
+      if (getLocationPref() !== 'true') {
+        userLat = null;
+        userLng = null;
+      }
       const stores = renderedStores.length ? [...renderedStores] : allStores;
       renderMarkers(stores);
+      if (!document.getElementById('list-view').classList.contains('hidden')) renderListView();
     }
   });
 
@@ -717,8 +722,22 @@ function renderListView() {
   }
 
   if (!userLat || !userLng) {
-    titleEl.textContent = '주변 판매점';
-    contentEl.innerHTML = '<p class="list-empty">위치 정보가 없어요.<br>설정 탭에서 내 위치를 켜주세요.</p>';
+    const favStores = allStores.filter(s => isFavorite(s.id));
+    if (!favStores.length) {
+      titleEl.textContent = '찜한 판매점';
+      contentEl.innerHTML = '<p class="list-empty">위치 정보가 없어요.<br>설정 탭에서 내 위치를 켜주세요.</p>';
+      return;
+    }
+    titleEl.textContent = `찜한 판매점 (${favStores.length})`;
+    contentEl.innerHTML = favStores.map(s =>
+      `<div class="list-store-card" onclick="onListCardClick(${s.id})">
+        <div class="list-store-name-row">
+          <span class="list-store-name">${s.name}</span>
+        </div>
+        <span class="list-store-type">${s.type}</span>
+        <p class="list-store-address">📍 ${s.address}</p>
+      </div>`
+    ).join('');
     return;
   }
 
