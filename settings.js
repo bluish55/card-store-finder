@@ -548,6 +548,7 @@ function initLocationToggle() {
 
 const NOTI_KEY = 'notiPresets';
 let currentNotiPresetId = null;
+let isNewNotiPreset = false;
 let notiLocType = 'gps';
 let notiFixedLat = null;
 let notiFormSnapshot = '';
@@ -650,18 +651,14 @@ function openNotiEdit(id) {
 }
 
 function addNotiPreset() {
-  const presets = getNotiPresets();
+  isNewNotiPreset = true;
   const id = 'n' + Date.now();
-  presets.push({ id, name: '새 알림', enabled: true, location: { type: 'gps' }, radius: 1000, types: [], reportTypes: ['available', 'low_stock'], favOnly: false, timeRange: { start: '09:00', end: '22:00' } });
-  saveNotiPresets(presets);
-  renderNotiPresetList();
   openNotiEdit(id);
 }
 
 function saveNotiPreset() {
   const presets = getNotiPresets();
   const idx = presets.findIndex(x => x.id === currentNotiPresetId);
-  if (idx === -1) return;
 
   const types = [...document.querySelectorAll('#noti-type-chips .chip.active')]
     .map(b => b.dataset.value).filter(v => v !== 'all');
@@ -673,8 +670,8 @@ function saveNotiPreset() {
     ? { type: 'gps' }
     : { type: 'fixed', lat: notiFixedLat, lng: notiFixedLng, address: notiFixedAddress };
 
-  presets[idx] = {
-    ...presets[idx],
+  const updated = {
+    id: currentNotiPresetId,
     name: document.getElementById('noti-preset-name-input').value || '이름 없음',
     enabled: document.getElementById('noti-enabled').checked,
     location,
@@ -688,9 +685,13 @@ function saveNotiPreset() {
     } : null
   };
 
+  if (idx === -1) presets.push(updated);
+  else presets[idx] = { ...presets[idx], ...updated };
+
+  isNewNotiPreset = false;
   saveNotiPresets(presets);
   syncNotiSubscription();
-  notiFormSnapshot = getNotiFormSnapshot(); // 저장 후 스냅샷 업데이트 (자동 저장 버그 방지)
+  notiFormSnapshot = getNotiFormSnapshot();
   document.getElementById('noti-edit-view').classList.add('hidden');
   document.getElementById('main-view').classList.remove('hidden');
   renderNotiPresetList();
@@ -701,6 +702,7 @@ function backFromNotiEdit() {
     showUnsavedModal(
       () => saveNotiPreset(),
       () => {
+        isNewNotiPreset = false;
         document.getElementById('noti-edit-view').classList.add('hidden');
         document.getElementById('main-view').classList.remove('hidden');
         renderNotiPresetList();
@@ -708,6 +710,7 @@ function backFromNotiEdit() {
     );
     return;
   }
+  isNewNotiPreset = false;
   document.getElementById('noti-edit-view').classList.add('hidden');
   document.getElementById('main-view').classList.remove('hidden');
   renderNotiPresetList();
