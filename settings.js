@@ -749,6 +749,7 @@ function updateNotiLocUI() {
 }
 
 function openNotiPickerSearch() {
+  document.getElementById('noti-picker-radius-chips').style.display = 'none';
   document.getElementById('noti-picker-search-btn').classList.add('hidden');
   document.getElementById('noti-picker-search-bar').classList.remove('hidden');
   document.getElementById('noti-picker-search').focus();
@@ -777,6 +778,13 @@ function openNotiMapPicker() {
     kakao.maps.event.addListener(notiPickerMap, 'dragend', updateNotiPickerAddress);
     loadNotiPickerStores();
     initNotiPickerSearch();
+    // 외부 클릭 시 반경 칩 닫기
+    document.addEventListener('click', e => {
+      const control = document.getElementById('noti-radius-control');
+      if (control && !control.contains(e.target)) {
+        document.getElementById('noti-picker-radius-chips').style.display = 'none';
+      }
+    });
   } else if (notiFixedLat) {
     notiPickerMap.setCenter(new kakao.maps.LatLng(notiFixedLat, notiFixedLng));
   }
@@ -784,12 +792,27 @@ function openNotiMapPicker() {
 }
 
 function toggleNotiPickerRadius() {
-  notiPickerRadiusVisible = !notiPickerRadiusVisible;
-  const chips = document.getElementById('noti-picker-radius-chips');
-  chips.style.display = notiPickerRadiusVisible ? 'flex' : 'none';
-  document.getElementById('noti-radius-toggle-btn').style.background = notiPickerRadiusVisible ? '#e53935' : 'white';
-  document.getElementById('noti-radius-toggle-btn').style.color = notiPickerRadiusVisible ? 'white' : '#333';
-  updateNotiPickerCircle();
+  const chipsEl = document.getElementById('noti-picker-radius-chips');
+  const chipsOpen = chipsEl.style.display === 'flex';
+  const btn = document.getElementById('noti-radius-toggle-btn');
+
+  if (!notiPickerRadiusVisible) {
+    // 원 꺼진 상태 → 켜기 + 칩 열기
+    notiPickerRadiusVisible = true;
+    chipsEl.style.display = 'flex';
+    btn.style.background = '#e53935';
+    btn.style.color = 'white';
+    updateNotiPickerCircle();
+  } else if (chipsOpen) {
+    // 원 켜짐 + 칩 열림 → 칩만 닫기
+    chipsEl.style.display = 'none';
+  } else {
+    // 원 켜짐 + 칩 닫힘 → 원 끄기
+    notiPickerRadiusVisible = false;
+    btn.style.background = 'white';
+    btn.style.color = '#333';
+    updateNotiPickerCircle();
+  }
 }
 
 function setNotiPickerRadius(r) {
@@ -797,27 +820,35 @@ function setNotiPickerRadius(r) {
   document.querySelectorAll('.picker-radius-chip').forEach(b => {
     b.classList.toggle('active', Number(b.dataset.value) === r);
   });
-  // 반경 설정 프리셋 칩도 동기화
   document.querySelectorAll('#noti-radius-chips .chip').forEach(b => {
     b.classList.toggle('active', Number(b.dataset.value) === r);
   });
+  const label = r >= 1000 ? (r / 1000) + 'km' : r + 'm';
+  document.getElementById('noti-radius-toggle-btn').textContent = label;
+  document.getElementById('noti-picker-radius-chips').style.display = 'none';
   updateNotiPickerCircle();
 }
 
 function updateNotiPickerCircle() {
-  if (notiPickerCircle) { notiPickerCircle.setMap(null); notiPickerCircle = null; }
-  if (!notiPickerRadiusVisible || !notiPickerMap) return;
+  if (!notiPickerRadiusVisible || !notiPickerMap) {
+    if (notiPickerCircle) { notiPickerCircle.setMap(null); notiPickerCircle = null; }
+    return;
+  }
   const center = notiPickerMap.getCenter();
-  notiPickerCircle = new kakao.maps.Circle({
-    map: notiPickerMap,
-    center,
-    radius: notiPickerRadius,
-    strokeWeight: 2,
-    strokeColor: '#e53935',
-    strokeOpacity: 0.8,
-    fillColor: '#e53935',
-    fillOpacity: 0.1
-  });
+  if (notiPickerCircle) {
+    notiPickerCircle.setOptions({ center, radius: notiPickerRadius });
+  } else {
+    notiPickerCircle = new kakao.maps.Circle({
+      map: notiPickerMap,
+      center,
+      radius: notiPickerRadius,
+      strokeWeight: 2,
+      strokeColor: '#e53935',
+      strokeOpacity: 0.8,
+      fillColor: '#e53935',
+      fillOpacity: 0.1
+    });
+  }
 }
 
 function initNotiPickerSearch() {
@@ -883,6 +914,7 @@ function updateNotiPickerAddress() {
   const center = notiPickerMap.getCenter();
   notiPickerLat = center.getLat();
   notiPickerLng = center.getLng();
+  if (notiPickerRadiusVisible) updateNotiPickerCircle();
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.coord2Address(notiPickerLng, notiPickerLat, (result, status) => {
     if (status === kakao.maps.services.Status.OK) {

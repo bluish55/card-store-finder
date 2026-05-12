@@ -501,3 +501,20 @@ button {
   color: white;
   border-color: #e53935;
 }
+
+.picker-radius-chip {
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: white;
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  border: none;
+  cursor: pointer;
+}
+
+.picker-radius-chip.active {
+  background: #e53935;
+  color: white;
+}
